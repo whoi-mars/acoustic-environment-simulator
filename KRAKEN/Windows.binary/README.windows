@@ -1,0 +1,65 @@
+Date: Fri, 04 Feb 2011 10:43:48 -0500
+From: iudovydchenkov@whoi.edu
+To: Brian Dushaw <dushaw@apl.washington.edu>
+Subject: Re: question about Kraken
+Parts/Attachments:
+   1 Shown    268 lines  Text (charset: ISO-8859-1)
+   2            0  byte  Application
+----------------------------------------
+
+Hi Brian,
+
+I spent the evening yesterday trying to compile Kraken under Windows and finally
+succeeded with your help and help from internet. Thanks for the great code and
+nicely written mex wrapper.
+
+Attached is the mexw64 file. Please add it to the library if you find it
+suitable. I haven't done extensive testings on it, but 3 test examples are
+plotting something very reasonable.
+
+Here is the step-by step guide how to create this file:
+
+1) Set up. Windows 7 64 bit, Intel XEON X5482 CPU, Microsoft Visual Studio 2010
+and Intel Fortran Compiler XE 12.0 integrated into Visual Studio(I also
+succeeded with Microsoft Visual Studio 2005 and Intel Visual Fortran 10.1; but
+you need different libraries; see below). Note that Matlab R2010 (as of
+02/04/2011) does not support Intel Fortran Compiler XE 12.0
+
+2) Compile all fortran routines from Visual Studio environment with Fortran
+compiler. Compile modules first (krakmod and sdrdrmod). The trick is to set
+Fortran Libraries compiler option to "Multithread DLL (/libs:dll /threads)".
+Otherwise linker will complain about missing main program. Make sure that you
+have chosen x64 platform. I also have chosen "Release" configuration, set
+Optimization to "Maximize Speed plus Higher Level Optimizations (/O3), set
+Parallelization to "Yes (/Qparallel)" and set Default Real KIND to 8 (in
+Fortran Data options; I am not sure whether this matters or not, seems to work
+either way). After this step is complete you will end up with 16 .obj files.
+
+3) In mkrak.c replace kraken_ with KRAKEN (remove underscore, case sensitive!).
+Alternatively there is an option to compile fortran codes with lower-case
+names, but I have not tried it. Otherwise C++ linker will not be able to find
+objects created by Fortran Compiler
+
+4) Make sure that MEX compiler is set to Microsoft Visual C++ 2010
+(run mex -setup).  From Matlab run the following command:
+mex -L"C:\Program Files (x86)\Intel\oneAPI\compiler\2025.0\lib"
+mkrak_jb.c...
+     bcimp.o kraken.o kuping.o readin.o sinvitd.o splinec.o
+twersk.o zbrentx.o...
+     errout.o krakmod.o mergev.o sdrdrmod.o sorti.o subtab.o
+weight.o zsecx.o...
+     -l"ifconsol" -l"libifcoremd" -l"libifportmd" -l"libiomp5md" -l"libmmd"
+-l"libirc"  -l"svml_disp"...
+     -l"libmatmul" -l"libmmt" -l"libdecimal"
+Here -L"C:...." is the path to Fortran libraries. I could not find a way how to
+add this path to mex linking options, so I manually pointed mex to each library.
+With Visual Studio 2005 and Intel Visual Fortran 10.1 you need slightly
+different set of libraries. An easy way to figure out which ones it to link
+without libraries and add them one by one from error messages (you only need
+about 10). Alternatively, it should be possible to set mex to look for these
+libraries automatically.
+
+Done.
+
+Ilya.
+

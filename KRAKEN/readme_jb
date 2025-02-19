@@ -1,0 +1,51 @@
+MEX FILE COMPILATION FOR LINUX
+(worked on Ubuntu 16.04LTS and Matlab R2017b)
+
+
+
+SOME PRELIMINARY INFORMATION
+
+1) the mexopts.sh is not read during compilation. The idea is to replace matlab original mexopts.sh, which can be found in matlab_root_folder/bin. In matlab, type 
+
+matlabroot
+
+to find it your root folder. On my computer, the mexopts.sh file is in
+
+/usr/local/MATLAB/R2017b/bin
+
+2) In Matlab R2017b, there is an other (additionnal) mex option file mex_C_glnxa64.xml in the folder ~/.matlab/R2017b. This file is usefull to link Matlab to a given gcc version, if several gcc versions are installed on the computer. Just change the "Location" line to point to the gcc versoin that matlab wants. In my case, I have change to line to 
+
+Location="/usr/bin/gcc-4.9"
+
+3) I have not been able to correctly used the mex option file, and thus put all the information in the Makefile.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+COMPILATION OF THE FORTRAN
+
+1) open the Makefile, comments the lines associated to the sunstudio compiler (lines 12-15), and uncomment the lines associated to gfortran (lines 20-21)
+
+2) In the variable FFLAGS
+--> add -cpp 
+--> replace -M $(MODDIR) by -I $(MODDIR)
+
+3) After this try to compile. There will be a bug. However, the fortran compilation should work, and the bug occurs only in the mex compilation. The error is 
+
+mkrak.c:(.text+0x27f): undefined reference to `kraken_'
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+MEX COMPILATION
+
+The mess compilation crashes because there is an issue between the fortran and the c codes. This is probably due to the mexopts.sh that is not properly used. One way around this is to replace the Makefile line
+
+	mex mkrak.c 
+
+by 
+
+	mex -L"/usr/bin/" mkrak.c obj/zsecx.o	obj/zbrentx.o obj/bcimp.o obj/kuping.o obj/sinvitd.o obj/mergev.o obj/weight.o obj/twersk.o obj/subtab.o obj/readin.o obj/errout.o obj/sorti.o obj/splinec.o obj/krakmod.o obj/sdrdrmod.o obj/kraken.o -lgfortran
+
+Note that in this line
+--> "/usr/bin/" is the folder where your gcc is installed.
+

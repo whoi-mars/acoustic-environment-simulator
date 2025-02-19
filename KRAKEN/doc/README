@@ -1,0 +1,25 @@
+To compile the mex file mkrak.c 
+
+  (a) Check the Makefile and mexopts.sh for your own situation.
+  (b) Execute make to make the object files.
+      Also runs mex mkrak.c to make the mex file.
+  (d) Run the test cases "runkrak1.m", "runkrak2.m", "runkrak3.m" in matlab 
+      (and watch matlab crash...)
+
+This code was developed using the free sunstudio f95 and C compilers
+http://developers.sun.com/sunstudio/
+
+The gnu gcc/gfortran compilers should also work, with some coaxing.  It is important 
+to have fortran and c compilers that are compatible.  Matlab is very tempermental
+about that.  See the mex directory for an example mexopts.sh file (mexopts.sh.gcc)
+
+I've stored the necessary libraries for the sunstudio binary "mkrak.mexa64" to 
+run in the libs directory.  Execute something like:
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/dushaw/matlab.kraken/libs
+to tell matlab where to find the libraries.
+Check with "ldd mkrak.mexa64" to be sure the libraries are found.  (The matlab
+libraries will be found once matlab is started.)
+
+
+B.D.D. 3/2010, revised 5/2010
+

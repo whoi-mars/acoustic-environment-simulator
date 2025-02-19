@@ -1,0 +1,75 @@
+PROG = kraken
+
+OBJDIR = obj
+MODDIR = mod
+SRCDIR = src
+
+# N.B. If you change the compiler or compiler options, you need to also
+# check the mexopts.sh file to be sure the compiler here is compatible
+# with the mex file compiler.
+
+# sunstudio compiler
+# FC=f95
+# -pic (position independent code) is needed for matlab mex compile
+# FFLAGS=-O2 -pic -w1 -M $(MODDIR) -xtarget=barcelona
+# FFLAGS=-xO5 -xarch=amdsse4a -xcache=64/64/2:512/64/16:1536/64/48 -xchip=amdfam10 -fns -ftrap=common -xlibmil -xlibmopt -nofstore -xregs=frameptr -fsimple=2 -pic -w1 -M $(MODDIR) 
+
+# gnu compiler
+# These options worked for me using the mex/mexopts.sh.gcc options file
+# gcc and gfortran should be two corresponding C and Fortran compilers
+FC=gfortran
+# FFLAGS= -fPIC -M $(MODDIR)  -march=amdfam10 -m64 -mfpmath=sse -Wall -finline-functions -ffast-math -fno-strength-reduce -fomit-frame-pointer -falign-functions=2  -O3
+FFLAGS= -cpp -fPIC -I $(MODDIR)  -march=amdfam10 -m64 -mfpmath=sse -Wall -finline-functions -ffast-math -fno-strength-reduce -fomit-frame-pointer -falign-functions=2  -O3
+# g95 compiler
+# FC=g95
+# FFLAGS= -fPIC -fmod=$(MODDIR)  -m64 -mfpmath=sse -Wall -finline-functions -ffast-math -fno-strength-reduce -fomit-frame-pointer -falign-functions=2  -O3
+
+
+all : $(PROG)
+	@echo " "
+	@echo "Mex KRAKEN built"
+	@echo " "
+ 
+clean : 
+	rm -f $(OBJ) $(MOD)
+
+$(MODDIR)/%.mod : $(SRCDIR)/%.f90
+	$(FC) $(FFLAGS) -c $< 
+	mv -f $*.o $(OBJDIR)/ 
+	mv -f $*.mod $(MODDIR)/
+
+$(OBJDIR)/%.o : $(MOD) $(SRCDIR)/%.f90
+	$(FC) $(FFLAGS) -c $< 
+	mv -f $*.o $(OBJDIR)/
+
+MOD =				\
+	$(MODDIR)/krakmod.mod	\
+	$(MODDIR)/sdrdrmod.mod	\
+
+OBJ =				\
+	$(OBJDIR)/zsecx.o	\
+	$(OBJDIR)/zbrentx.o	\
+	$(OBJDIR)/bcimp.o	\
+	$(OBJDIR)/kuping.o	\
+	$(OBJDIR)/sinvitd.o	\
+	$(OBJDIR)/mergev.o	\
+	$(OBJDIR)/weight.o	\
+	$(OBJDIR)/twersk.o	\
+	$(OBJDIR)/subtab.o	\
+	$(OBJDIR)/readin.o	\
+	$(OBJDIR)/errout.o	\
+	$(OBJDIR)/sorti.o	\
+	$(OBJDIR)/splinec.o	\
+	$(OBJDIR)/kraken.o	\
+	$(OBJDIR)/krakmod.o	\
+	$(OBJDIR)/sdrdrmod.o	
+
+$(PROG) : $(MOD) $(OBJ)
+	@echo " "
+	@echo " "
+	@echo "Building Kraken"
+	@echo " "
+	@echo " "
+	mex -L"/usr/bin/" mkrak_jb.c obj/zsecx.o	obj/zbrentx.o obj/bcimp.o obj/kuping.o obj/sinvitd.o obj/mergev.o obj/weight.o obj/twersk.o obj/subtab.o obj/readin.o obj/errout.o obj/sorti.o obj/splinec.o obj/krakmod.o obj/sdrdrmod.o obj/kraken.o -lgfortran
+#	strip mkrak.mexa64
+#	make clean

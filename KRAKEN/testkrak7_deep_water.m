@@ -1,0 +1,127 @@
+clear all
+clear mkrak
+close all
+
+nm=200;    % Max number of modes calculated
+nl=1; %number of layer, including water
+%%% one must have [nl,~]=size(b); 
+
+note1='NVW';  %%% Options - see Krakan_HELP.txt (4)
+% 'NVW' = N2-linear profile
+%         VACUUM above top
+%         attenuation in dB/wavelength
+
+%%% top halfspace boundary condition 
+% syntax:  ZT  CPT  CST  RHOT  APT  AST
+sspTHS=[0  343.0     0.000   0.00121    0    0.000 ];   %%% useless if note1(2) ~= A
+
+D=2500;
+b1=[0  0.0  D]; 
+% b_out = [ NMESH SIGMA Z(NSSP) ]
+%
+%          NMESH:   Number of mesh points to use initially.
+%                   The number of mesh points should be about 10
+%                   per vertical wavelength in acoustic media. In
+%                   elastic media, the number needed can vary quite
+%                   a bit; 20 per wavelength is a reasonable
+%                   starting point.
+% 
+%                   The maximum allowable number of mesh points is
+%                   given by 'MAXN' in the dimension statements. 
+%                   At present 'MAXN' is 50000.  The number of mesh
+%                   points used depends on the initial mesh and the
+%                   number of times it is refined (doubled).  The
+%                   number of mesh doublings can vary from 1 to 5
+%                   depending on the parameter RMAX described
+%                   below.
+% 
+%                   If you type 0 for the number of mesh points,
+%                   the code will calculated NMESH automatically.
+%          SIGMA:   RMS roughness at the interface.
+% 
+%          Z(NSSP): Depth at bottom of medium (m).
+%                   This value is used to detect the last SSP point
+%                   when reading in the profile that follows. 
+
+%%% SSP syntax 
+% [Z(1)     CP(1)     CS(1)     RHO(1)     AP(1)     AS(1)
+%  Z(2)     CP(2)     CS(2)     RHO(2)     AP(2)     AS(2)
+% .... ]
+
+ssp1= [0.000  1525     0.000   1.03000     0.000    0.000
+       750.00 1500     0.000   1.03000     0.000    0.000
+       D      1550     0.000   1.03000     0.000    0.000];
+      
+% b2=[0  0.0  120];
+% ssp2=[100   1600     0.000   1.6     0.0100    0.000
+%       120  1600     0.000   1.6     0.0100    0.000];
+
+
+note2='A'; %%%% Bottom boundary condition
+%%% bottom halfspace boundary condition 
+% syntax:  Z  CP  CS  RHO  AP  AS
+sspBHS=[D  1800     0.000   2    0.2    0.000 ];  %%% useless if note2 ~= A
+bsig=0;  % Bottom interfacial roughness(m)
+
+%%% collect top/bottom half space boundary conditions
+sspHS = [sspTHS;sspBHS];
+%%% collect ssp
+% b=[b1; b2];
+% ssp=[ssp1; ssp2];
+b=b1;
+ssp=ssp1;
+[nc, ~]=size(ssp);
+
+%%% Phase speed limits
+CHigh =max([max(ssp(:,2)),sspBHS(2)])*1.2;
+CLow = 0;
+clh=[CLow  CHigh];
+
+%%% Source/receiver config
+rng=5000; % range (m); used for error estimate
+zr_=0:ssp(end,1); % depth for modal depth function computation
+
+%%% do not change that
+ns=  1; % number of sources 
+zs=zr_(1) ; % source depth
+nzr=length(zr_)-1; % number of points for modal depth function computation
+zrc=[zr_(2) zr_(end)] ;
+
+
+frq0=100;
+[cg, cp, kr_re ,kr_im, z_krak, modes]=mkrak_jb(nm,frq0,nl,note1,b,nc,ssp,note2,bsig,sspHS,clh,rng,ns,zs,nzr,zrc);
+
+%% Plot env
+figure
+plot(ssp(:,2),ssp1(:,1),'k','linewidth',2)
+hold on
+plot([ssp(end,2) sspBHS(2)],[sspBHS(1) sspBHS(1)],'k','linewidth',2)
+hold on
+plot([sspBHS(2) sspBHS(2)],[sspBHS(1) sspBHS(1)+500],'k','linewidth',2)
+axis ij
+grid on
+xlabel('Sound speed (m/s)')
+ylabel('Depth (m)')
+
+%%
+figure
+stem(cp)
+ylim([1490 1810])
+xlabel('Mode number')
+ylabel('Phase speed (m/s)')
+hold on
+plot([0 nm], [1525 1525], 'k', 'linewidth',2)
+hold on
+plot([0 nm], [1500 1500], 'r', 'linewidth',2)
+hold on
+plot([0 nm], [1550 1550], 'g', 'linewidth',2 )
+hold on
+plot([0 nm], [1800 1800], 'y', 'linewidth',2 )
+
+legend('Phase speed', 'c_{water}^{top}', 'c_{water}^{min}', 'c_{water}^{bot}', 'c_{bottom}')
+
+%%
+mm=109;
+figure
+plot(modes(:,mm), z_krak)
+axis ij
