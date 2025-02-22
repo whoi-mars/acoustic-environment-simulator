@@ -1,13 +1,20 @@
-function [CTD, full_depth_vec] = load_asc_CTD_data(datadir,dz)
+function [CTD, full_depth_vec] = load_asc_CTD_data(datadir,dz,varargin)
     % LOAD_ASC_CTD_DATA Extract CTD data and take closest points along the
-    % vector 2:dz:max_depth. If 'CTD_data.mat' is not saved in 'datadir'
+    % vector Dmin:dz:Dmax. If 'CTD_data.mat' is not saved in 'datadir'
     % already, then the data will be extracted. If it is, it will simply be
     % loaded.
     %
     % Parameters
     % ----------
+    % required
+    % --------
     % datadir: path to directory containing CTD data files.
     % dz:      spacing in depth vector.
+    % optional
+    % --------
+    % Dmin:    minimum considered depth (to eliminate noise before cast
+    %          begins.
+    % Dmax:    maximum considered depth.
     %
     % Results
     % -------
@@ -17,7 +24,27 @@ function [CTD, full_depth_vec] = load_asc_CTD_data(datadir,dz)
     % full_depth_vec: depth vector that ranges from 2 to the max depth
     %                 among all CTD files with a spacing of 'dz'.
     
+    
+    % parse inputs
+    parser = inputParser;
+    addRequired(parser,'datadir');
+    addRequired(parser,'dz',@isscalar);
+    checkNonNegInt = @(x) isscalar(x) && x >= 0;
+    addParameter(parser,'Dmin',2,checkNonNegInt);
+    addParameter(parser,'Dmax',200,checkNonNegInt);
+    parse(parser,datadir,dz,varargin{:});
+
+    % unpack inputs
+    datadir = parser.Results.datadir;
+    dz = parser.Results.dz;
+    Dmin = parser.Results.Dmin;
+    Dmax = parser.Results.Dmax;
+
+    % depth range check
+    assert(Dmin < Dmax,"'Dmin must be less than Dmax.");
+
     if exist(fullfile(datadir,'CTD_data.mat'),'file') == 2
+        fprintf("Loading From Save...");
         load(fullfile(datadir,'CTD_data.mat'));
         return
     end
@@ -51,17 +78,25 @@ function [CTD, full_depth_vec] = load_asc_CTD_data(datadir,dz)
         end
 
         % get indices after the cast begins
-        A = A(A(:,1)>2 & A(:,1)<200,:);
+        A = A(A(:,1)>Dmin & A(:,1)<Dmax,:);
 
         % extract downcast
         [M,I] = max(A(:,1));
         A = A(1:I,:);
         
         % extract measurements on the approximate desired interval
-        [inds,~] = dsearchn(A(:,1),(2:dz:floor(M))');
+        [inds,errs] = dsearchn(A(:,1),(Dmin:dz:floor(M))');
+        
+        % make sure error from desired depths are small enough
+        if ~isempty(errs(errs > 1))
+            warning("Due to choice of 'dz', some points differ from the desired depth by more than 1 meter.");
+        end
+        
+        % replace depths with desired vector which the depths are
+        % approximately taken from
         inds = unique(inds);
         A = A(inds,:);
-        A(:,1) = (2:floor(M))';
+        A(:,1) = (Dmin:floor(M))';
         
         % store results
         CTD_cell{f-num_ignore} = A;
@@ -77,6 +112,7 @@ function [CTD, full_depth_vec] = load_asc_CTD_data(datadir,dz)
     for i = 1:length(CTD_cell)
         CTD(i,1:size(CTD_cell{i},1),:) = CTD_cell{i};
     end
-
+    
+    fprintf("Saving...");
     save(fullfile(datadir,"CTD_data.mat"));
 end

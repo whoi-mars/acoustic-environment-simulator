@@ -1,10 +1,12 @@
-function [D_grid, locs_ok, TOSSIT_latlons_grid, range_grids, mesh_lon, mesh_lat, mesh_x, mesh_y] = get_bathymetry(filepath,env_bounds,TOSSIT_latlons,min_water_depth)
+function [D_grid, locs_ok, TOSSIT_latlons_grid, TOSSIT_latlons_inds, range_grids, mesh_lon, mesh_lat, mesh_x, mesh_y] = get_bathymetry(filepath,bathym_round,loc_dilation,env_bounds,TOSSIT_latlons,min_water_depth)
     % GET_BATHYMETRY Properly load the bathymetry and calculate and return
     % all the relevant metadata used in simulation.
     %
     % Parameters
     % ----------
     % filepath  :      path to bathymetry file.
+    % bathym_round:    nearest interval to round the depths to.
+    % loc_dilation:    dilation factor for valid source locations.
     % env_bounds:      lat/lon corners of a rectangular region of the form 
     %                  [UL; LL; LR; UR] where the first column is lat and 
     %                  the second is lon.
@@ -20,6 +22,7 @@ function [D_grid, locs_ok, TOSSIT_latlons_grid, range_grids, mesh_lon, mesh_lat,
     % TOSSIT_latlons_grid: lat/lon values of the TOSSITs snapped to closest
     %                      points in the bathymetry grid where the first
     %                      column is the lat and the second is the lon.
+    % TOSSIT_latlons_inds: indices in the bathymetry grid for the TOSSITs.
     % range_grids        : grids of ranges from each point to each TOSSIT
     %                      in km.
     % mesh_lon           : grid of longitude values.
@@ -76,6 +79,7 @@ function [D_grid, locs_ok, TOSSIT_latlons_grid, range_grids, mesh_lon, mesh_lat,
     
     % construct TOSSIT lat/lon values from grid matches
     TOSSIT_latlons_grid = [bath.lat(lat_inds).' bath.lon(lon_inds).'];
+    TOSSIT_latlons_inds = [lat_inds lon_inds];
 
     %--------------------------------------
     %        Global Lon/Lat Meshes
@@ -127,9 +131,15 @@ function [D_grid, locs_ok, TOSSIT_latlons_grid, range_grids, mesh_lon, mesh_lat,
     end
 
     %-----------------------------------------
-    %   X/Y Meshes Relative to Each TOSSIT 
+    %  Round Depth And Mark Valid Locations 
     %-----------------------------------------
     
+    % round
     D_grid = bath.d;
-    locs_ok = (-D_grid >= min_water_depth);
+    D_grid = round(D_grid/bathym_round)*bathym_round;
+    
+    % get valid locations
+    locs_ok = zeros(size(D_grid));
+    locs_ok(1:loc_dilation:end,1:loc_dilation:end) = 1;
+    locs_ok(-D_grid < min_water_depth) = 0;
 end
