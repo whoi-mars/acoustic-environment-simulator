@@ -18,7 +18,7 @@ function [b, ssp] = make_b_and_ssp(D,H,c_w,c_sed,rho_w,rho_sed,z,alpha_sed)
     % ssp: sound speed profile
     
     % check depth
-    assert(D >= 2, "D must be >= the smallest provided water SSP value.");
+    assert(D >= min(z), "D must be >= the smallest provided water SSP value.");
 
     %----------------------------------------------
     %              Create b Matrix 

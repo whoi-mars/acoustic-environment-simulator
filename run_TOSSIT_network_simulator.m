@@ -53,7 +53,7 @@ config.BATH_FILE = 'data/bathymetry/MudpatchDEM.mat';
 %               Signal Parameters
 %---------------------------------------------
 % frequency range
-config.FREQ_RANGE = [0 300]; % [Hz]
+config.FREQ_RANGE = [10 300]; % [Hz]
 % frequency sample spacing
 config.DF = 1/6; % [Hz]
 % sample rate
