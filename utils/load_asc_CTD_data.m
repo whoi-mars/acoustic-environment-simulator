@@ -12,9 +12,10 @@ function [CTD, full_depth_vec] = load_asc_CTD_data(datadir,dz,varargin)
     % dz:      spacing in depth vector.
     % optional
     % --------
-    % Dmin:    minimum considered depth (to eliminate noise before cast
-    %          begins.
-    % Dmax:    maximum considered depth.
+    % Dmin:     minimum considered depth (to eliminate noise before cast
+    %           begins.
+    % Dmax:     maximum considered depth.
+    % fill_top: whether or not to extend the SSP to z = 0 m.
     %
     % Results
     % -------
@@ -32,6 +33,7 @@ function [CTD, full_depth_vec] = load_asc_CTD_data(datadir,dz,varargin)
     checkNonNegInt = @(x) isscalar(x) && x >= 0;
     addParameter(parser,'Dmin',2,checkNonNegInt);
     addParameter(parser,'Dmax',200,checkNonNegInt);
+    addParameter(parser,'fill_top',false,@islogical);
     parse(parser,datadir,dz,varargin{:});
 
     % unpack inputs
@@ -39,6 +41,7 @@ function [CTD, full_depth_vec] = load_asc_CTD_data(datadir,dz,varargin)
     dz = parser.Results.dz;
     Dmin = parser.Results.Dmin;
     Dmax = parser.Results.Dmax;
+    fill_top = parser.Results.fill_top;
 
     % depth range check
     assert(Dmin < Dmax,"'Dmin must be less than Dmax.");
@@ -107,12 +110,24 @@ function [CTD, full_depth_vec] = load_asc_CTD_data(datadir,dz,varargin)
         fclose(fid);
     end
     
+    % rotate depth vector
+    full_depth_vec = full_depth_vec';
+
     % move to matrix
     CTD = zeros(length(CTD_cell),length(full_depth_vec),4);
     for i = 1:length(CTD_cell)
         CTD(i,1:size(CTD_cell{i},1),:) = CTD_cell{i};
     end
     
+    % fill top of SSP
+    if fill_top
+        z_fill = (0:dz:min(full_depth_vec))';
+        full_depth_vec = [z_fill; full_depth_vec];
+        CTD_fill = CTD(:,1,:) .* ones(size(CTD,1),length(z_fill),size(CTD,3));
+        CTD_fill(:,1:length(z_fill),1) = repelem(z_fill',size(CTD,1),1);
+        CTD = [CTD_fill CTD];
+    end
+    
     fprintf("Saving...");
-    save(fullfile(datadir,"CTD_data.mat"));
+    save(fullfile(datadir,"CTD_data.mat"),'CTD','full_depth_vec');
 end

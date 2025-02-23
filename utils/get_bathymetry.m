@@ -135,11 +135,11 @@ function [D_grid, locs_ok, TOSSIT_latlons_grid, TOSSIT_latlons_inds, range_grids
     %-----------------------------------------
     
     % round
-    D_grid = bath.d;
+    D_grid = -bath.d;
     D_grid = round(D_grid/bathym_round)*bathym_round;
     
     % get valid locations
     locs_ok = zeros(size(D_grid));
     locs_ok(1:loc_dilation:end,1:loc_dilation:end) = 1;
-    locs_ok(-D_grid < min_water_depth) = 0;
+    locs_ok(D_grid < min_water_depth) = 0;
 end

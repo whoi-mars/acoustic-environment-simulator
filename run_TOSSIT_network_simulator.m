@@ -30,6 +30,8 @@ rng(1234);
 config.ADD_NOISE = 0;
 % number of parallel proesses
 config.N = 2;
+% frequency value to approximate vg as f --> infinity
+config.FREQ_ASYM = 10000;
 
 
 %---------------------------------------------

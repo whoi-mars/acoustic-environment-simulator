@@ -39,7 +39,7 @@ end
 %---------------------------------------------
 fprintf('Loading CTD Data...')
 % load data
-[CTD, full_depth_vec] = load_asc_CTD_data(config.CTD_PATH,config.DZ);
+[CTD, full_depth_vec] = load_asc_CTD_data(config.CTD_PATH,config.DZ,'fill_top',true);
 
 % isolate sound speed
 C_data = CTD(:,:,end);
@@ -60,6 +60,7 @@ fprintf('Done!\n')
 freq_krak = config.FREQ_RANGE(1):config.DF:config.FREQ_RANGE(2); % [Hz]
 Nf = length(freq_krak); % []
 D_max = max(D_grid,[],"all"); % [m]
+rho_w = 1; % [g/cm^3]
 
 %------------------------------------------------------------------------
 %========================================================================
@@ -161,10 +162,10 @@ for i_cb = 1:L_cb
             
             % sample/calculate remaining parameters
             [c_w, lambda] = kle.sample(1,config.ALPHA_V,'coeffs',true);
-            rho_sed = hamilton(c_sed); % [g/cm^3]
-            rho_b = hamilton(c_b); % [g/cm^3]
+            rho_sed = hamilton(curr_c_sed); % [g/cm^3]
+            rho_b = hamilton(curr_cb); % [g/cm^3]
             alpha_sed = unifrnd(config.ALPHA_SED_RANGE(1),config.ALPHA_SED_RANGE(2)); % [dB/lambda]
-            alpha_b = unifrnd(config.ALPHA_B_RANGE(1),config.ALPHA_SED_RANGE(2)); % [dB/lambda]
+            alpha_b = unifrnd(config.ALPHA_B_RANGE(1),config.ALPHA_B_RANGE(2)); % [dB/lambda]
 
             % TODO: Display Progress %
 
@@ -174,6 +175,54 @@ for i_cb = 1:L_cb
             kr_krak_mem = zeros(L_D,Nf,config.NM,'single'); % [1/m]
             phi_krak_mem = zeros(L_D,Nf,config.NM,D_max + curr_H + 1,'single');
             z_axis_mem = cell(L_D,1); % [m]
+            for i_d = 1:L_D
+                
+                % get current water depth
+                curr_D = unique_D(i_d);
+
+                % define receiver parameters
+                nrd = curr_D + curr_H; % []
+                rd = [1, curr_D + curr_H]; % [m]
+                
+                % get the medium information and SSP
+                [b,ssp] = make_b_and_ssp(curr_D,curr_H,c_w,curr_c_sed,rho_w,rho_sed,full_depth_vec,alpha_sed);
+            
+                nl = size(b,1);
+
+                % get number of rows in SSP
+                [nc,~] = size(ssp);
+                
+                % top/bottom halfspaces
+                sspTHS = [0 343 0.000 0.00121 0 0.000];
+                sspBHS = [curr_D + curr_H curr_cb 0 rho_b alpha_b 0];
+                sspHS = [sspTHS; sspBHS];
+
+                %----------------------------------------------
+                % Phase Speed Limits
+                % CLOW - lower phase limit [m/s]
+                % CHIGH - upper phase limit [m/s]
+                %----------------------------------------------
+                clh=[0 max([max(ssp(:,2)), sspBHS(2)])];
+                
+                for ff = 1:Nf
+                    [vg,~,kr_re,kr_im,zm,modes] = mkrak_jb(config.NM,...
+                                                           freq_krak(ff),...
+                                                           nl,...
+                                                           note1,...
+                                                           b,...
+                                                           nc,...
+                                                           ssp,...
+                                                           note2,...
+                                                           bsig,...
+                                                           sspHS,...
+                                                           clh,...
+                                                           rng,...
+                                                           nsd,...
+                                                           sd,...
+                                                           nrd,...
+                                                           rd);
+                end
+            end
         end
     end
 end
