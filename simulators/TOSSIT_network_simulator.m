@@ -61,6 +61,7 @@ freq_krak = config.FREQ_RANGE(1):config.DF:config.FREQ_RANGE(2); % [Hz]
 Nf = length(freq_krak); % []
 D_max = max(D_grid,[],"all"); % [m]
 rho_w = 1; % [g/cm^3]
+num_TOSSITs = size(TOSSIT_latlons_grid,1);
 
 %------------------------------------------------------------------------
 %========================================================================
@@ -204,8 +205,8 @@ for i_cb = 1:L_cb
                 %----------------------------------------------
                 clh=[0 max([max(ssp(:,2)), sspBHS(2)])];
                 
-                for ff = 1:Nf
-                    freq = freq_krak(ff);
+                for i_f = 1:Nf
+                    freq = freq_krak(i_f); % [Hz]
                     [vg,~,kr_re,kr_im,zm,modes] = mkrak_jb(config.NM,...
                                                            freq,...
                                                            nl,...
@@ -222,8 +223,32 @@ for i_cb = 1:L_cb
                                                            sd,...
                                                            nrd,...
                                                            rd);
+
+                    % store results
+                    kr_krak_mem(i_d,i_f,:) = kr_re + 1i*abs(kr_im);
+                    phi_krak_mem(i_d,i_f,:,1:curr_D + curr_H + 1) = modes.';
+                    z_axis_mem{i_d} = zm;
                 end
             end
+
+            %----------------------------------------------------------
+            %==========================================================
+            %       Use KRAKEN Results In Adiabatic Approximation 
+            %==========================================================
+            %----------------------------------------------------------
+            
+            %----------------------------------------------
+            %      KRAKEN Results at Each TOSSIT 
+            %----------------------------------------------
+            % horizontal wavenumbers
+            kr_krak_r = zeros(num_TOSSITs,Nf,config.NM);
+            % modal depth functions
+            phi_krak_r = zeros(num_TOSSITs,Nf,config.NM,D_max+curr_H+1);
+            % depth vector at each TOSSIT
+            z_axis_r = cell(1,num_TOSSITs);
+            % depth index for each TOSSIT
+            i_zr = zeros(1,num_TOSSITs);
+
         end
     end
 end
