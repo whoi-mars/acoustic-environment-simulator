@@ -174,7 +174,7 @@ for i_cb = 1:L_cb
             %   Run KRAKEN For All Depths In Environment 
             %----------------------------------------------
             kr_krak_mem = zeros(L_D,Nf,config.NM,'single'); % [1/m]
-            phi_krak_mem = zeros(L_D,Nf,config.NM,D_max + curr_H + 1,'single');
+            phi_krak_mem = zeros(L_D,Nf,config.NM,(1/config.BATHYM_ROUND) * (D_max + curr_H + 1),'single');
             z_axis_mem = cell(L_D,1); % [m]
             for i_d = 1:L_D
                 
@@ -182,8 +182,8 @@ for i_cb = 1:L_cb
                 curr_D = unique_D(i_d);
 
                 % define receiver parameters
-                nrd = curr_D + curr_H; % []
-                rd = [1, curr_D + curr_H]; % [m]
+                nrd = (1/config.BATHYM_ROUND) * (curr_D + curr_H); % []
+                rd = [config.BATHYM_ROUND, curr_D + curr_H]; % [m]
                 
                 % get the medium information and SSP
                 [b,ssp] = make_b_and_ssp(curr_D,curr_H,c_w,curr_c_sed,rho_w,rho_sed,full_depth_vec,alpha_sed);
@@ -223,10 +223,13 @@ for i_cb = 1:L_cb
                                                            sd,...
                                                            nrd,...
                                                            rd);
-
-                    % store results
+                    
+                    %----------------------------------------------
+                    %                 Store Results 
+                    %----------------------------------------------
                     kr_krak_mem(i_d,i_f,:) = kr_re + 1i*abs(kr_im);
-                    phi_krak_mem(i_d,i_f,:,1:curr_D + curr_H + 1) = modes.';
+                    mode_ind = find_in_vec(zm,curr_D + curr_H);
+                    phi_krak_mem(i_d,i_f,:,1:mode_ind) = modes.';
                     z_axis_mem{i_d} = zm;
                 end
             end
@@ -236,19 +239,59 @@ for i_cb = 1:L_cb
             %       Use KRAKEN Results In Adiabatic Approximation 
             %==========================================================
             %----------------------------------------------------------
-            
+
             %----------------------------------------------
             %      KRAKEN Results at Each TOSSIT 
             %----------------------------------------------
             % horizontal wavenumbers
-            kr_krak_r = zeros(num_TOSSITs,Nf,config.NM);
+            kr_krak_r = kr_krak_mem(TOSSITs_D_inds,:,:); % zeros(num_TOSSITs,Nf,config.NM);
             % modal depth functions
-            phi_krak_r = zeros(num_TOSSITs,Nf,config.NM,D_max+curr_H+1);
-            % depth vector at each TOSSIT
+            phi_krak_r = phi_krak_mem(TOSSITs_D_inds,:,:,:); % zeros(num_TOSSITs,Nf,config.NM,D_max+curr_H+1);
+            % depth vector at each TOSSIT and receiver index
             z_axis_r = cell(1,num_TOSSITs);
-            % depth index for each TOSSIT
             i_zr = zeros(1,num_TOSSITs);
+            for t = 1:num_TOSSITs
+                z_axis_r{t} = z_axis_mem{TOSSITs_D_inds(t)};
+                i_zr(t) = find_in_vec(z_axis_r{t},TOSSITs_D(t)-1);
+            end
 
+            %----------------------------------------------
+            %      Simulate Source at Each Location
+            %----------------------------------------------
+            for i_loc = 1:L_locs
+                % store results
+                p_m_f = zeros(nfft,config.NM,num_TOSSITs,L_zs,'single');
+
+                %----------------------------------------------
+                %                Labels/Metadata
+                %----------------------------------------------
+                cb_labels = zeros(1,L_zs,'single'); % [m/s]
+                cw_coeffs = zeros(length(lambda),L_zs,'single');
+                c_sed_labels = zeros(1,L_zs,'single'); % [m/s]
+                H_labels = zeros(1,L_zs,'single'); % [m]
+                zs_labels = zeros(1,L_zs,'single'); % [m]
+                loc_labels = zeros(2,L_zs,'single'); % [m,m]
+                r_labels = zeros(num_TOSSITs,L_zs,'single'); % [m]
+
+                %---------------------------------------------------------
+                %  Initialize Environmental Parameters for a Given Source 
+                %---------------------------------------------------------
+                % TODO %
+
+                % sample location
+                [y_s,x_s] = ind2sub(size(D_grid),randsample(loc_inds,1));
+
+                for t = 1:num_TOSSITs
+                    % get bathymetry slice for integration from source to
+                    % each TOSSIT
+                    getBathymSlice(range_grids(:,:,t),...
+                                   [y_s,x_s],...
+                                   TOSSIT_latlons_inds(t,:),...
+                                   config.DR,...
+                                   mesh_x(:,:,t),...
+                                   mesh_y(:,:,t));
+                end
+            end
         end
     end
 end

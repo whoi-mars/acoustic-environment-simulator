@@ -121,6 +121,7 @@ function [D_grid, locs_ok, TOSSIT_latlons_grid, TOSSIT_latlons_inds, range_grids
         for j = 1:length(bath.lon)
             mesh_x(:,j,i) = deg2km(distance([mesh_lat(:,j) mesh_lon(:,j)],[lat_origin_x lon_origin_x]));
         end
+        mesh_x(:,1:lon_inds(i),i) = -mesh_x(:,1:lon_inds(i));
 
         % handle y meshes
         lon_origin_y = mesh_lon(lat_inds(i),:);
@@ -128,6 +129,7 @@ function [D_grid, locs_ok, TOSSIT_latlons_grid, TOSSIT_latlons_inds, range_grids
         for j = 1:length(bath.lat)
             mesh_y(j,:,i) = deg2km(distance([mesh_lat(j,:); mesh_lon(j,:)].',[lat_origin_y; lon_origin_y].'));
         end
+        mesh_y(1:lat_inds(i),:,i) = -mesh_y(1:lat_inds(i),:,i);
     end
 
     %-----------------------------------------

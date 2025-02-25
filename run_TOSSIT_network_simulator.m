@@ -15,7 +15,7 @@ addpath("data");
 addpath("utils");
 
 % set RNG
-rng(1234); 
+rng(1239); 
 
 %------------------------------------------------------------------------
 %========================================================================
@@ -32,6 +32,8 @@ config.ADD_NOISE = 0;
 config.N = 2;
 % frequency value to approximate vg as f --> infinity
 config.FREQ_ASYM = 10000;
+% delta r for range integration
+config.DR = 0.5; % [m]
 
 
 %---------------------------------------------
