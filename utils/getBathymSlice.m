@@ -6,15 +6,17 @@ function [pts_ind_grid,r_list_grid] = getBathymSlice(range, loc_s, loc_r, dr, me
     %
     % Parameters
     % ----------
-    % range        : An L X M map where each point contains the range of 
+    % range:         An L X M map where each point contains the range of 
     %                those coordinates on the bathymetry map to a 
     %                particular TOSSIT.
-    % loc_s        : Pixel coordinates of the source on the bathymetry map.
-    % loc_r        : Pixel coordinates of the TOSSIT on the bathymetry map.
-    % dr           : Desired distance in km between points along the 
+    % loc_s:         Pixel coordinates of the source on the bathymetry map.
+    % loc_r:         Pixel coordinates of the TOSSIT on the bathymetry map.
+    % dr:            Desired distance in km between points along the 
     %                bathymetry slice. One of the steps will probably be 
     %                shorter because the interval likely cannot be divided 
     %                into an whole number of equal segments.
+    % mesh_x:        grids of x distances relative to each TOSSIT in km.
+    % mesh_y:        grids of y distances relative to each TOSSIT in km.
     %
     % Returns
     % -------

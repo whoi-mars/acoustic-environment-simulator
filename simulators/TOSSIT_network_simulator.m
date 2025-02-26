@@ -69,7 +69,7 @@ num_TOSSITs = size(TOSSIT_latlons_grid,1);
 %========================================================================
 %------------------------------------------------------------------------
 
-fprintf("Running KRAKEN...")
+fprintf("KRAKEN Setup...")
 
 %----------------------------------------------
 % Simulation Options
@@ -137,6 +137,8 @@ nfft = length(freq_sig);
 min_ind_f = find_in_vec(freq_sig',config.FREQ_RANGE(1));
 max_ind_f = find_in_vec(freq_sig',config.FREQ_RANGE(2));
 ind_f = min_ind_f:max_ind_f;
+
+fprintf("Done!\n");
 
 % TODO: Setup Saving Data %
 
@@ -244,9 +246,9 @@ for i_cb = 1:L_cb
             %      KRAKEN Results at Each TOSSIT 
             %----------------------------------------------
             % horizontal wavenumbers
-            kr_krak_r = kr_krak_mem(TOSSITs_D_inds,:,:); % zeros(num_TOSSITs,Nf,config.NM);
+            kr_krak_r = kr_krak_mem(TOSSITs_D_inds,:,:);
             % modal depth functions
-            phi_krak_r = phi_krak_mem(TOSSITs_D_inds,:,:,:); % zeros(num_TOSSITs,Nf,config.NM,D_max+curr_H+1);
+            phi_krak_r = phi_krak_mem(TOSSITs_D_inds,:,:,:);
             % depth vector at each TOSSIT and receiver index
             z_axis_r = cell(1,num_TOSSITs);
             i_zr = zeros(1,num_TOSSITs);
@@ -265,8 +267,8 @@ for i_cb = 1:L_cb
                 %----------------------------------------------
                 %                Labels/Metadata
                 %----------------------------------------------
-                cb_labels = zeros(1,L_zs,'single'); % [m/s]
                 cw_coeffs = zeros(length(lambda),L_zs,'single');
+                cb_labels = zeros(1,L_zs,'single'); % [m/s]
                 c_sed_labels = zeros(1,L_zs,'single'); % [m/s]
                 H_labels = zeros(1,L_zs,'single'); % [m]
                 zs_labels = zeros(1,L_zs,'single'); % [m]
@@ -276,25 +278,130 @@ for i_cb = 1:L_cb
                 %---------------------------------------------------------
                 %  Initialize Environmental Parameters for a Given Source 
                 %---------------------------------------------------------
-                % TODO %
+                ranges_s = zeros(1,num_TOSSITs); % [km]
+                kr_integral = zeros(num_TOSSITs,Nf,config.NM); % [1/m]
 
                 % sample location
                 [y_s,x_s] = ind2sub(size(D_grid),randsample(loc_inds,1));
+                
+                % flag for if a shallow bathymetry region is crossed for a
+                % particular source location
+                shallow_flag = 0;
 
                 for t = 1:num_TOSSITs
+                    %-----------------------------------------
+                    %          Get Bathymetry Slice 
+                    %-----------------------------------------     
                     % get bathymetry slice for integration from source to
                     % each TOSSIT
-                    getBathymSlice(range_grids(:,:,t),...
-                                   [y_s,x_s],...
-                                   TOSSIT_latlons_inds(t,:),...
-                                   config.DR,...
-                                   mesh_x(:,:,t),...
-                                   mesh_y(:,:,t));
+                    [pts,r_list] = getBathymSlice(range_grids(:,:,t),...
+                                                  [y_s,x_s],...
+                                                  TOSSIT_latlons_inds(t,:),...
+                                                  config.DR,...
+                                                  mesh_x(:,:,t),...
+                                                  mesh_y(:,:,t));
+
+                    % save source-receiver range
+                    ranges_s(t) = r_list(end); % [km]
+
+                    % get depths along the source/receiver path and
+                    % corresponding index in unique depth list
+                    Ds_bath_path = D_grid(sub2ind(size(D_grid),pts(:,1),pts(:,2))); % [m]
+                    [~,Ds_bath_path_inds] = ismember(Ds_bath_path,unique_D);
+
+                    % check if a depth too shallow is between the source
+                    % and receiver
+                    if nnz(Ds_bath_path >= 0 & (Ds_bath_path < config.MIN_WATER_DEPTH))
+                        shallow_flag = 1;
+                        break;
+                    end
+                    
+                    %-----------------------------------------
+                    %      Zero Out Decayed Frequencies 
+                    %-----------------------------------------
+                    % store quantities to be integrated
+                    kr_bathline = kr_krak_mem(Ds_bath_path_inds,:,:);
+                    
+                    % find frequency/mode indices where energy decays
+                    has_zeros = ~squeeze(any(kr_bathline == 0,1));
+                    has_zeros_3d(1,:,:) = has_zeros;
+
+                    % zero out
+                    kr_bathline = kr_bathline.*has_zeros_3d;
+                    
+                    %-----------------------------------------
+                    %    Integrate And Save Relevant Values 
+                    %-----------------------------------------
+                    kr_integral(t,:,:) = squeeze(trapz(r_list,kr_bathline,1)); % [1/m]
+
                 end
+                
+                % check if shallow water flag triggered. if so go to
+                % another location
+                % TODO: if triggered sample another location
+                if shallow_flag
+                    continue;
+                end
+
+                %----------------------------------------------------------
+                %==========================================================
+                %               Calculate Pressure Fields 
+                %==========================================================
+                %----------------------------------------------------------          
+                
+                % get complex scalar constant
+                Q = (1i*exp(-1i*pi/4)) ./ (rho_w*sqrt(8*pi*ranges_s'));
+                
+                % calculate pressure fields for each source depth when
+                % possible
+                call_num = 1;
+                for i_zs = 1:L_zs
+                    
+                    % get current source depth
+                    curr_zs = zs_vec(i_zs); % [m]
+                
+                    % ensure source depth is in water column. if not skip 
+                    if nnz(curr_zs >= Ds_bath_path)
+                        continue;
+                    end
+
+                    %----------------------------------------------
+                    %           Store Labels/Metadata
+                    %----------------------------------------------
+                    cw_coeffs(:,call_num) = lambda;
+                    cb_labels(call_num) = curr_cb; % [m/s]
+                    c_sed_labels(call_num) = curr_c_sed; % [m/s]
+                    H_labels(call_num) = curr_H; % [m]
+                    zs_labels(call_num) = curr_zs; % [m]
+                    loc_labels(:,call_num) = [mesh_y(y_s,x_s,1); mesh_x(y_s,x_s,1)]; % [km,km], w.r.t. first TOSSIT
+                    r_labels(:,call_num) = ranges_s; % [km]
+
+                    for ff = 1:Nf
+                        for mm = 1:config.NM
+                            
+                            % skip if wavenumbers for all TOSSITs at a
+                            % given [ff,mm] are zero. check the integral
+                            % and the wavenumber at the TOSSITs
+                            if nnz(kr_integral(:,ff,mm)) && nnz(kr_krak_r(:,ff,mm))
+                                
+                                % if we've made it to this point, there is
+                                % signal at at least one TOSSIT for this
+                                % [ff,mm]. so we make a logical vector
+                                % indicating which are nonzero.
+                                valid_t_inds = (kr_integral(:,ff,mm) ~= 0) & (kr_krak_r(:,ff,mm) ~= 0);
+
+                            end
+                        end
+                    end
+
+                end
+
+                % get current total call numbers simulated (including those
+                % that were ignored)
+                data = struct;
+                data.total_call_count = sub2ind([L_zs L_locs L_H L_c_sed L_cb],i_zs,i_loc,i_H,i_c_sed,i_cb);
+
             end
         end
     end
 end
-
-fprintf("Done!\n")
-
