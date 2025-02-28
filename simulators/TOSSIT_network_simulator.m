@@ -142,6 +142,8 @@ fprintf("Done!\n");
 
 % TODO: Setup Saving Data %
 
+fprintf("Run Simulation...");
+
 % start parallel pool
 % p = parpool(config.N);
 
@@ -229,7 +231,7 @@ for i_cb = 1:L_cb
                     %----------------------------------------------
                     %                 Store Results 
                     %----------------------------------------------
-                    kr_krak_mem(i_d,i_f,:) = kr_re + 1i*abs(kr_im);
+                    kr_krak_mem(i_d,i_f,:) = kr_re - 1i*abs(kr_im);
                     mode_ind = find_in_vec(zm,curr_D + curr_H);
                     phi_krak_mem(i_d,i_f,:,1:mode_ind) = modes.';
                     z_axis_mem{i_d} = zm;
@@ -251,10 +253,10 @@ for i_cb = 1:L_cb
             phi_krak_r = phi_krak_mem(TOSSITs_D_inds,:,:,:);
             % depth vector at each TOSSIT and receiver index
             z_axis_r = cell(1,num_TOSSITs);
-            i_zr = zeros(1,num_TOSSITs);
+            i_zmr = zeros(1,num_TOSSITs);
             for t = 1:num_TOSSITs
                 z_axis_r{t} = z_axis_mem{TOSSITs_D_inds(t)};
-                i_zr(t) = find_in_vec(z_axis_r{t},TOSSITs_D(t)-1);
+                i_zmr(t) = find_in_vec(z_axis_r{t},TOSSITs_D(t)-1);
             end
 
             %----------------------------------------------
@@ -275,15 +277,19 @@ for i_cb = 1:L_cb
                 loc_labels = zeros(2,L_zs,'single'); % [m,m]
                 r_labels = zeros(num_TOSSITs,L_zs,'single'); % [m]
 
-                %---------------------------------------------------------
-                %  Initialize Environmental Parameters for a Given Source 
-                %---------------------------------------------------------
-                ranges_s = zeros(1,num_TOSSITs); % [km]
-                kr_integral = zeros(num_TOSSITs,Nf,config.NM); % [1/m]
-
                 % sample location
                 [y_s,x_s] = ind2sub(size(D_grid),randsample(loc_inds,1));
                 
+                %---------------------------------------------------------
+                %  Initialize Environmental Parameters For Source 
+                %---------------------------------------------------------
+                ranges_s = zeros(1,num_TOSSITs); % [km]
+                kr_integral = zeros(num_TOSSITs,Nf,config.NM); % [1/m]
+                Ds_ind = find(unique_D == D_grid(y_s,x_s));
+                phi_krak_s = squeeze(phi_krak_mem(Ds_ind,:,:,:));
+                z_axis_s = z_axis_mem{Ds_ind}; % [m]
+                [~,i_zms] = ismember(zs_vec,z_axis_s);
+
                 % flag for if a shallow bathymetry region is crossed for a
                 % particular source location
                 shallow_flag = 0;
@@ -332,8 +338,7 @@ for i_cb = 1:L_cb
                     %-----------------------------------------
                     %    Integrate And Save Relevant Values 
                     %-----------------------------------------
-                    kr_integral(t,:,:) = squeeze(trapz(r_list,kr_bathline,1)); % [1/m]
-
+                    kr_integral(t,:,:) = squeeze(trapz((1000*r_list),kr_bathline,1)); % [1/m]
                 end
                 
                 % check if shallow water flag triggered. if so go to
@@ -350,7 +355,7 @@ for i_cb = 1:L_cb
                 %----------------------------------------------------------          
                 
                 % get complex scalar constant
-                Q = (1i*exp(-1i*pi/4)) ./ (rho_w*sqrt(8*pi*ranges_s'));
+                Q = (1i*exp(-1i*pi/4)) ./ (rho_w*sqrt(8*pi*(1000*ranges_s)));
                 
                 % calculate pressure fields for each source depth when
                 % possible
@@ -388,20 +393,50 @@ for i_cb = 1:L_cb
                                 % signal at at least one TOSSIT for this
                                 % [ff,mm]. so we make a logical vector
                                 % indicating which are nonzero.
-                                valid_t_inds = (kr_integral(:,ff,mm) ~= 0) & (kr_krak_r(:,ff,mm) ~= 0);
+                                valid_t_inds_logical = (kr_integral(:,ff,mm) ~= 0) & (kr_krak_r(:,ff,mm) ~= 0);
+                                
+                                % number of valid TOSSITs
+                                num_t = nnz(valid_t_inds_logical);
+                                
+                                % convert logical indicest to numerical
+                                t_inds = (1:num_TOSSITs).*valid_t_inds_logical';
+                                t_inds(t_inds == 0) = [];
+
+                                % get linear indices for modes at receiver
+                                phi_krak_r_inds = sub2ind(size(phi_krak_r),...
+                                                          t_inds,...
+                                                          ff*ones(1,num_t),...
+                                                          mm*ones(1,num_t),...
+                                                          i_zmr(valid_t_inds_logical));
+
+                                % calculate pressure field
+                                p_m_f(ind_f(ff),mm,t_inds,call_num) = Q(t_inds)...
+                                                                    .*phi_krak_s(ff,mm,i_zms(i_zs))...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        .*phi_krak_s(ff,mm,i_zms(i_zs))...
+                                                                    .*phi_krak_r(phi_krak_r_inds)...
+                                                                    .*(exp(-1i*kr_integral(t_inds,ff,mm)) ./ sqrt(kr_krak_r(t_inds,ff,mm))).';
 
                             end
                         end
                     end
-
+                    % iterate call number if fully simulated
+                    call_num = call_num + 1;
+                end
+                
+                % if no successful calls move on to next location
+                if call_num == 1
+                    continue;
                 end
 
                 % get current total call numbers simulated (including those
                 % that were ignored)
                 data = struct;
                 data.total_call_count = sub2ind([L_zs L_locs L_H L_c_sed L_cb],i_zs,i_loc,i_H,i_c_sed,i_cb);
-
+                
+                % sum modes
+                p_f = squeeze(p_m_f,2);
             end
         end
     end
 end
+
+fprintf("Done!\n");
