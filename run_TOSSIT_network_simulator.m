@@ -27,7 +27,7 @@ rng(1234);
 %             Simulation Settings
 %---------------------------------------------
 % add experimental noise flag
-config.ADD_NOISE = 0;
+config.ADD_NOISE = 1;
 % number of parallel proesses
 config.N = 2;
 % frequency value to approximate vg as f --> infinity
@@ -62,10 +62,12 @@ config.DF = 1/6; % [Hz]
 config.FS = 600; % [Hz]
 % number of modes
 config.NM = 12; % []
+% signal-to-noise ratio range
+config.SNR_RANGE = [-5 5];
 % number of experimental noise examples to load
-config.NUM_NOISE = 5000; % []
+config.NUM_NOISE = 5; % []
 % path to noise data
-config.NOISE_FILE = 'data/noise/sbcex_noise.h5';
+config.NOISE_FILE = 'data/noise/sbcex22_noise.h5';
 
 %---------------------------------------------
 %               Source Parameters

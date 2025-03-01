@@ -132,6 +132,9 @@ TOSSITs_D = D_grid(sub2ind(size(D_grid),TOSSIT_latlons_inds(:,1),TOSSIT_latlons_
 if config.FS < 2*config.FREQ_RANGE(2)
     error("FS must be >= 2*FMAX.");
 end
+if mod((config.FS / 2),config.DF)
+    error("FS must exist in 'freq_sig'. Choose a new FS or DF.");
+end
 freq_sig = 0:config.DF:config.FS-config.DF;
 nfft = length(freq_sig);
 min_ind_f = find_in_vec(freq_sig',config.FREQ_RANGE(1));
@@ -288,7 +291,7 @@ for i_cb = 1:L_cb
                 Ds_ind = find(unique_D == D_grid(y_s,x_s));
                 phi_krak_s = squeeze(phi_krak_mem(Ds_ind,:,:,:));
                 z_axis_s = z_axis_mem{Ds_ind}; % [m]
-                [~,i_zms] = ismember(zs_vec,z_axis_s);
+                i_zms = find_in_vec(z_axis_s,zs_vec');
 
                 % flag for if a shallow bathymetry region is crossed for a
                 % particular source location
@@ -433,7 +436,70 @@ for i_cb = 1:L_cb
                 data.total_call_count = sub2ind([L_zs L_locs L_H L_c_sed L_cb],i_zs,i_loc,i_H,i_c_sed,i_cb);
                 
                 % sum modes
-                p_f = squeeze(p_m_f,2);
+                p_f = squeeze(sum(p_m_f,2));
+
+                % aggregate labels
+                labels = [cw_coeffs
+                          cb_labels
+                          c_sed_labels
+                          H_labels
+                          zs_labels
+                          loc_labels
+                          r_labels];
+
+                % trim to simulated calls
+                p_f = p_f(:,:,1:call_num-1);
+                labels = labels(:,1:call_num-1);
+
+                % add noise
+                if config.ADD_NOISE
+                    % create label vector for SNRs
+                    snr_labels = zeros(num_TOSSITs,call_num-1,'single');
+                    
+                    for call = 1:call_num-1
+                        % get a signal at all TOSSITs
+                        signal_f = p_f(:,:,call);
+
+                        % sample noises
+                        sampled_noise = noise(:,randi(size(noise,2),1,num_TOSSITs));
+                        
+                        % randomly shift noise
+                        for n_ind = 1:num_TOSSITs
+                            sampled_noise(:,n_ind) = circshift(sampled_noise(:,n_ind),randi((1 / config.DF) * config.FS),1);
+                        end
+
+                        % take fft and trim to positive frequencies
+                        sampled_noise = fft(sampled_noise,nfft,1);
+                        fn_max_ind = find_in_vec(freq_sig,config.FS/2);
+                        sampled_noise(fn_max_ind:end,:) = 0;
+                        
+                        % add noise
+                        [signal_f,snr] = add_noise(signal_f,sampled_noise,config.SNR_RANGE);
+
+                        % update signal
+                        p_f(:,:,call) = signal_f;
+
+                        % save SNR labels
+                        snr_labels(:,call) = snr;
+                    end
+                    
+                    % add snr_labels to labels
+                    labels = [labels; snr_labels];
+                end
+
+                % load data struct for saving to disk
+                data.p_f = p_f;
+                data.labels = labels;
+                data.fs = config.FS;
+                data.df = config.DF;
+                data.i_loc = i_loc;
+                data.chunk_size = call_num - 1;
+                data.num_labels = size(labels,1);
+                if config.ADD_NOISE
+                    data.num_labels = data.num_labels + num_TOSSITs;
+                end
+
+                % TODO: save results
             end
         end
     end
