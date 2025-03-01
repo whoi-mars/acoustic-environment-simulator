@@ -31,9 +31,9 @@ config.ADD_NOISE = 1;
 % number of parallel proesses
 config.N = 2;
 % frequency value to approximate vg as f --> infinity
-config.FREQ_ASYM = 10000;
+config.FREQ_ASYM = 400;
 % delta r for range integration
-config.DR = 0.5; % [m]
+config.DR = 0.5; % [km]
 
 
 %---------------------------------------------

@@ -183,6 +183,8 @@ for i_cb = 1:L_cb
             kr_krak_mem = zeros(L_D,Nf,config.NM,'single'); % [1/m]
             phi_krak_mem = zeros(L_D,Nf,config.NM,(1/config.BATHYM_ROUND) * (D_max + curr_H + 1),'single');
             z_axis_mem = cell(L_D,1); % [m]
+            vg_krak_mem = zeros(L_D,Nf,config.NM); % [m/s]
+            vg_asym_krak_mem = zeros(L_D,config.NM); % [m/s]
             for i_d = 1:L_D
                 
                 % get current water depth
@@ -212,6 +214,26 @@ for i_cb = 1:L_cb
                 %----------------------------------------------
                 clh=[0 max([max(ssp(:,2)), sspBHS(2)])];
                 
+                % use a relatively high frequency to get the group speed
+                % for arrival time calculation
+                [vg,~,~,~,~,~] = mkrak_jb(config.NM,...
+                                          config.FREQ_ASYM,...
+                                          nl,...
+                                          note1,...
+                                          b,...
+                                          nc,...
+                                          ssp,...
+                                          note2,...
+                                          bsig,...
+                                          sspHS,...
+                                          clh,...
+                                          rng,...
+                                          nsd,...
+                                          sd,...
+                                          nrd,...
+                                          rd);
+                vg_asym_krak_mem(i_d,:) = vg;
+
                 for i_f = 1:Nf
                     freq = freq_krak(i_f); % [Hz]
                     [vg,~,kr_re,kr_im,zm,modes] = mkrak_jb(config.NM,...
@@ -238,6 +260,7 @@ for i_cb = 1:L_cb
                     mode_ind = find_in_vec(zm,curr_D + curr_H);
                     phi_krak_mem(i_d,i_f,:,1:mode_ind) = modes.';
                     z_axis_mem{i_d} = zm;
+                    vg_krak_mem(i_d,i_f,:) = vg;
                 end
             end
 
@@ -279,6 +302,8 @@ for i_cb = 1:L_cb
                 zs_labels = zeros(1,L_zs,'single'); % [m]
                 loc_labels = zeros(2,L_zs,'single'); % [m,m]
                 r_labels = zeros(num_TOSSITs,L_zs,'single'); % [m]
+                t_close = zeros(num_TOSSITs,L_zs,'single'); % [s]
+                t_far = zeros(num_TOSSITs,L_zs,'single'); % [s]
 
                 % sample location
                 [y_s,x_s] = ind2sub(size(D_grid),randsample(loc_inds,1));
@@ -292,6 +317,8 @@ for i_cb = 1:L_cb
                 phi_krak_s = squeeze(phi_krak_mem(Ds_ind,:,:,:));
                 z_axis_s = z_axis_mem{Ds_ind}; % [m]
                 i_zms = find_in_vec(z_axis_s,zs_vec');
+                vg_integral = zeros(num_TOSSITs,Nf,config.NM); % [m/s]
+                vg_asym_integral = zeros(num_TOSSITs,config.NM); % [m/s]
 
                 % flag for if a shallow bathymetry region is crossed for a
                 % particular source location
@@ -330,6 +357,8 @@ for i_cb = 1:L_cb
                     %-----------------------------------------
                     % store quantities to be integrated
                     kr_bathline = kr_krak_mem(Ds_bath_path_inds,:,:);
+                    vg_bathline = vg_krak_mem(Ds_bath_path_inds,:,:);
+                    vg_asym_bathline = vg_asym_krak_mem(Ds_bath_path_inds,:);
                     
                     % find frequency/mode indices where energy decays
                     has_zeros = ~squeeze(any(kr_bathline == 0,1));
@@ -337,11 +366,14 @@ for i_cb = 1:L_cb
 
                     % zero out
                     kr_bathline = kr_bathline.*has_zeros_3d;
+                    vg_bathline = vg_bathline.*has_zeros_3d;
                     
                     %-----------------------------------------
                     %    Integrate And Save Relevant Values 
                     %-----------------------------------------
                     kr_integral(t,:,:) = squeeze(trapz((1000*r_list),kr_bathline,1)); % [1/m]
+                    vg_integral(t,:,:) = (1000*r_list(end)) ./ squeeze(trapz((1000*r_list),1./vg_bathline,1)); % [m/s]
+                    vg_asym_integral(t,:) = (1000*r_list(end)) ./ squeeze(trapz((1000*r_list),1./vg_asym_bathline,1)); % [m/s]
                 end
                 
                 % check if shallow water flag triggered. if so go to
@@ -360,6 +392,11 @@ for i_cb = 1:L_cb
                 % get complex scalar constant
                 Q = (1i*exp(-1i*pi/4)) ./ (rho_w*sqrt(8*pi*(1000*ranges_s)));
                 
+                % calculate arrival and end times of received signals
+                vg_integral(vg_integral == 0) = nan;
+                far_times = (1000*ranges_s) ./ min(vg_integral, [], [2,3]).'; % [s]
+                close_times = (1000*ranges_s) ./ max(vg_asym_integral,[],2).'; % [s]
+
                 % calculate pressure fields for each source depth when
                 % possible
                 call_num = 1;
@@ -384,6 +421,24 @@ for i_cb = 1:L_cb
                     loc_labels(:,call_num) = [mesh_y(y_s,x_s,1); mesh_x(y_s,x_s,1)]; % [km,km], w.r.t. first TOSSIT
                     r_labels(:,call_num) = ranges_s; % [km]
 
+                    %----------------------------------------------
+                    %           Store Start/End Times
+                    %----------------------------------------------
+                    if nnz(isnan(far_times))
+                        % if all modes are evanescent on any TOSSIT, ignore
+                        % that source
+                        warning("A simulation contains all evanescent modes. Try increasing FMAX.");
+                        continue;
+                    elseif any((far_times - close_times) > (1 / config.DF))
+                        % warn and skip if any signals are longer than the
+                        % simulated window length
+                        warning("Signal longer than simulated duration.");
+                        continue;
+                    else
+                        t_far(:,call_num) = far_times;
+                        t_close(:,call_num) = close_times;
+                    end
+                    
                     for ff = 1:Nf
                         for mm = 1:config.NM
                             
@@ -416,8 +471,8 @@ for i_cb = 1:L_cb
                                 p_m_f(ind_f(ff),mm,t_inds,call_num) = Q(t_inds)...
                                                                     .*phi_krak_s(ff,mm,i_zms(i_zs))...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        .*phi_krak_s(ff,mm,i_zms(i_zs))...
                                                                     .*phi_krak_r(phi_krak_r_inds)...
-                                                                    .*(exp(-1i*kr_integral(t_inds,ff,mm)) ./ sqrt(kr_krak_r(t_inds,ff,mm))).';
-
+                                                                    .*(exp(-1i*kr_integral(t_inds,ff,mm)) ./ sqrt(kr_krak_r(t_inds,ff,mm))).'...
+                                                                    .*exp(2*1i*pi*freq_krak(ff)*t_close(t_inds,call_num)).';
                             end
                         end
                     end
@@ -450,6 +505,8 @@ for i_cb = 1:L_cb
                 % trim to simulated calls
                 p_f = p_f(:,:,1:call_num-1);
                 labels = labels(:,1:call_num-1);
+                t_far = t_far(:,1:call_num-1);
+                t_close = t_close(:,1:call_num-1);
 
                 % add noise
                 if config.ADD_NOISE
@@ -487,6 +544,14 @@ for i_cb = 1:L_cb
                     labels = [labels; snr_labels];
                 end
 
+                % randomly shift signals within simulated window
+                durations = t_far - t_close; % [s]
+                for call = 1:call_num-1
+                    for t = 1:num_TOSSITs
+                        p_f(:,t,call) = p_f(:,t,call).*(exp(2*1i*pi*freq_sig*randi(round((config.FS/config.DF) - durations(t,call))))).';
+                    end
+                end
+
                 % load data struct for saving to disk
                 data.p_f = p_f;
                 data.labels = labels;
@@ -495,6 +560,8 @@ for i_cb = 1:L_cb
                 data.i_loc = i_loc;
                 data.chunk_size = call_num - 1;
                 data.num_labels = size(labels,1);
+                data.t_close = t_close;
+                data.t_far = t_far;
                 if config.ADD_NOISE
                     data.num_labels = data.num_labels + num_TOSSITs;
                 end
