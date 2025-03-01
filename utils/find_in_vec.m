@@ -25,6 +25,11 @@ function [inds] = find_in_vec(x,nums,varargin)
     nums = parser.Results.nums;
     thresh = parser.Results.thresh;
 
+    % make sure column dimensions are the same
+    if size(x,2) ~= size(nums,2)
+        x = x';
+    end
+
     % find values
     [inds,dist] = dsearchn(x,nums);
     
