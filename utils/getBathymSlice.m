@@ -1,8 +1,8 @@
 function [pts_ind_grid,r_list_grid] = getBathymSlice(range, loc_s, loc_r, dr, mesh_x, mesh_y)
-    % Gets points along a slice of bathymetry which are approximately a
-    % desired length apart (potentially with the exception of the last step
-    % if the residual is less than the desired length). It is approximate
-    % because this method uses the flat-Earth assumption.
+    % GETBATHYMSLICE Gets points along a slice of bathymetry which are 
+    % approximately a desired length apart (potentially with the exception 
+    % of the last step if the residual is less than the desired length). It 
+    % is approximate because this method uses the flat-Earth assumption.
     %
     % Parameters
     % ----------

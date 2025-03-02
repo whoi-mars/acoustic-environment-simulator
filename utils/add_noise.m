@@ -1,5 +1,18 @@
 function [signal_f_out,snr] = add_noise(s,n,snr_range)
-    % ADD_NOISE
+    % ADD_NOISE Add noise to signal with SNR sampled from a specified
+    % range.
+    %
+    % Parameters
+    % ----------
+    % s:         signals from multiple sensors of shape [# samples X # sensors].
+    % n:         noise signals of the same shape as 's'.
+    % snr_range: range of SNR values to sample from.
+    %
+    % Returns
+    % -------
+    % signal_f_out: 's' with noise added.
+    % snr:          SNR of each signal contained in the columns of
+    %               'signal_f_out'.
     
     assert(isequal(size(s),size(n)),"'s' and 'n' must be the same size.");
 
