@@ -112,6 +112,7 @@ L_c_sed = length(c_sed_vec);
 L_H = length(H_vec);
 L_cb = length(cb_vec);
 L_locs = config.N_LOCS;
+L_LSC = config.LOC_SAVE_CHUNK;
 total_sims = L_zs*L_c_sed*L_H*L_cb*L_locs;
 
 % get indices for valid locations to sample
@@ -147,6 +148,12 @@ fprintf("Done!\n");
 
 fprintf("Run Simulation...");
 
+% set up queue if saving
+if config.SAVE
+    q = parallel.pool.DataQueue;
+    afterEach(q,@(data) update(data,config.SAVE_DATA_DIR,L_LSC,L_zs,nfft,num_TOSSITs,total_sims));
+end
+
 % start parallel pool
 % p = parpool(config.N);
 
@@ -175,7 +182,13 @@ for i_cb = 1:L_cb
             alpha_sed = unifrnd(config.ALPHA_SED_RANGE(1),config.ALPHA_SED_RANGE(2)); % [dB/lambda]
             alpha_b = unifrnd(config.ALPHA_B_RANGE(1),config.ALPHA_B_RANGE(2)); % [dB/lambda]
 
-            % TODO: Display Progress %
+            % display progress
+            fprintf("\n%d/%d -- c_b: %s m/s -- c_sed: %s m/s -- H: %s m\n",...
+                    sub2ind([L_H,L_c_sed,L_cb],i_H,i_c_sed,i_cb),...
+                    L_H*L_c_sed*L_cb,...
+                    string(curr_cb),...
+                    string(curr_c_sed),...
+                    string(curr_H));
 
             %----------------------------------------------
             %   Run KRAKEN For All Depths In Environment 
@@ -362,7 +375,8 @@ for i_cb = 1:L_cb
                     
                     % find frequency/mode indices where energy decays
                     has_zeros = ~squeeze(any(kr_bathline == 0,1));
-                    has_zeros_3d(1,:,:) = has_zeros;
+                    has_zeros_3d = zeros(1,size(has_zeros,1),size(has_zeros,2));
+                    has_zeros_3d(:) = has_zeros;
 
                     % zero out
                     kr_bathline = kr_bathline.*has_zeros_3d;
@@ -562,14 +576,121 @@ for i_cb = 1:L_cb
                 data.num_labels = size(labels,1);
                 data.t_close = t_close;
                 data.t_far = t_far;
-                if config.ADD_NOISE
-                    data.num_labels = data.num_labels + num_TOSSITs;
-                end
 
-                % TODO: save results
+                % save results
+                if config.SAVE
+                    % send(q,data);
+                    update(data,config.SAVE_DATA_DIR,L_LSC,L_zs,nfft,num_TOSSITs,total_sims);
+                end
             end
         end
     end
 end
 
 fprintf("Done!\n");
+
+function update(data,path,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
+    % UPDATE Callback function used to save data in chunks.
+    %
+    % Parameters
+    % ----------
+    % data:        data struct containing relevant objects for each save.
+    %               - p_f:        frequency domain signals.
+    %               - labels:     matrix of labels.
+    %               - fs:         sampling frequency.
+    %               - df:         discrete step used to sample frequency.
+    %               - i_loc:      index of sampled source location.
+    %               - chunk_size: number of simulated signals fed to 
+    %                             function.
+    %               - num_labels: number of labels in 'labels'.
+    %               - t_close:    arrival time of simulated signals at the 
+    %                             receiver.
+    %               - t_far:      end time of simulated signals at the 
+    %                             receiver.
+    % path:        path to directory where data is to be saved.
+    % L_CHUNK:     number of locations to save data from in a single file.
+    % N_SIGS:      number of signals simulated per location.
+    % num_TOSSITs: number of sensors.
+    % total_sims:  total number of simulated signals to be
+    %              produced/attempted.
+
+    % persistent variables to save
+    persistent p_f labels t_close t_far df fs;
+
+    % persistent counter to know when to save a file
+    persistent counter;
+
+    % initialize when called the first time. note that we initialize with
+    % an extra environment's worth of memory
+    if isempty(p_f)
+        t_far = zeros(num_TOSSITs,(L_CHUNK+1)*N_SIGS,'single');
+        t_close = zeros(num_TOSSITs,(L_CHUNK+1)*N_SIGS,'single');
+        p_f = zeros(nfft,num_TOSSITs,(L_CHUNK+1)*N_SIGS,'single');
+        labels = zeros(data.num_labels,(L_CHUNK+1)*N_SIGS,'single');
+        fs = data.fs;
+        df = data.df;
+    
+        counter = 1;
+    end
+
+    % add new data
+    t_far(:,counter:counter+data.chunk_size-1) = data.t_far;
+    t_close(:,counter:counter+data.chunk_size-1) = data.t_close;
+    p_f(:,:,counter:counter+data.chunk_size-1) = data.p_f;
+    labels(:,counter:counter+data.chunk_size-1) = data.labels;
+
+    % iterate counter
+    counter = counter + data.chunk_size;
+
+    if data.total_call_count == total_sims
+        % we are at the last chunk of data to be simulated and save now
+
+        % clear out remaining empty elements. there will always be extra
+        % because of the extra memory initialized
+        t_far(:,counter:end) = [];
+        t_close(:,counter:end) = [];
+        p_f(:,:,counter:end) = [];
+        labels(:,counter:end) = [];
+
+        % save calls
+        parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,fs,df,data.i_loc)
+        return;
+    elseif counter >= L_CHUNK*N_SIGS + 1
+        % if ew've filled the persistent variables, we save now
+
+        % save calls
+        parsave_TOSSIT_network(path,p_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df,data.i_loc)
+            
+        % reset persistent variables, carrying over extra signals that did
+        % not fit in the save chunk if they exist
+        mod_res = mod(counter,L_CHUNK*N_SIGS+1);
+        if mod_res == 0
+            % no left over signals
+
+            % zero out vectors
+            t_far(:) = 0;
+            t_close(:) = 0;
+            p_f(:) = 0;
+            labels(:) = 0;
+
+            % reset counter
+            counter = 1;
+        else
+            t_far(:,1:mod_res) = t_far(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            t_far(:,mod_res+1:end) = 0;
+            t_close(:,1:mod_res) = t_close(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            t_close(:,mod_res+1:end) = 0;
+            p_f(:,:,1:mod_res) = p_f(:,:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            p_f(:,:,mod_res+1:end) = 0;
+            labels(:,1:mod_res) = labels(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            labels(:,mod_res+1:end) = 0;
+
+            % reset counter
+            counter = mod_res + 1;
+        end
+
+        return;
+    else
+        return;
+    end
+end

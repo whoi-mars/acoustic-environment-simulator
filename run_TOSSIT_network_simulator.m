@@ -28,13 +28,18 @@ rng(1234);
 %---------------------------------------------
 % add experimental noise flag
 config.ADD_NOISE = 1;
+% save flag
+config.SAVE = 1;
+% directory to save data to
+config.SAVE_DATA_DIR = 'data/sim_data';
 % number of parallel proesses
 config.N = 2;
 % frequency value to approximate vg as f --> infinity
 config.FREQ_ASYM = 400;
 % delta r for range integration
 config.DR = 0.5; % [km]
-
+% number of locations to save in a file
+config.LOC_SAVE_CHUNK = 1;
 
 %---------------------------------------------
 %     TOSSIT Configuration + Bathymetry
