@@ -72,7 +72,7 @@ config.SNR_RANGE = [-5 5];
 % number of experimental noise examples to load
 config.NUM_NOISE = 5; % []
 % path to noise data
-config.NOISE_FILE = 'data/noise/sbcex22_noise.h5';
+config.NOISE_FILE = 'data/noise/sbcex22_noise.hdf5';
 
 %---------------------------------------------
 %               Source Parameters
