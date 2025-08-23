@@ -1,3 +1,4 @@
+
 %------------------------------------------------------------------------
 %========================================================================
 %                               Setup
@@ -61,15 +62,6 @@ Nf = length(freq_krak); % []
 D_max = max(D_grid,[],"all"); % [m]
 rho_w = 1; % [g/cm^3]
 num_TOSSITs = size(TOSSIT_latlons_grid,1);
-
-
-
-
-
-
-
-
-
 
 %------------------------------------------------------------------------
 %========================================================================
@@ -157,6 +149,9 @@ S = zeros(1,length(freq_sig));
 S(min_ind_f:max_ind_f) = 1;
 
 fprintf("Done!\n");
+
+% TODO: Setup Saving Data %
+
 fprintf("Run Simulation...");
 
 % set up queue if saving
@@ -185,7 +180,7 @@ for i_cb = 1:L_cb
 
             % get current sediment thickness
             curr_H = H_vec(i_H); % [m]
-
+            
             % sample/calculate remaining parameters
             [c_w, lambda] = kle.sample(1,config.ALPHA_V,'coeffs',true);
             rho_sed = hamilton(curr_c_sed); % [g/cm^3]
@@ -220,8 +215,7 @@ for i_cb = 1:L_cb
                 
                 % get the medium information and SSP
                 [b,ssp] = make_b_and_ssp(curr_D,curr_H,c_w,curr_c_sed,rho_w,rho_sed,full_depth_vec,alpha_sed);
-
-                % number of layers
+            
                 nl = size(b,1);
 
                 % get number of rows in SSP
@@ -238,7 +232,7 @@ for i_cb = 1:L_cb
                 % CHIGH - upper phase limit [m/s]
                 %----------------------------------------------
                 clh=[0 max([max(ssp(:,2)), sspBHS(2)])];
-
+                
                 % use a relatively high frequency to get the group speed
                 % for arrival time calculation
                 [vg,~,~,~,~,~] = mkrak_jb(config.NM,...
@@ -277,36 +271,24 @@ for i_cb = 1:L_cb
                                                            sd,...
                                                            nrd,...
                                                            rd);
-
+                    
                     %----------------------------------------------
                     %                 Store Results 
                     %----------------------------------------------
                     kr_krak_mem(i_d,i_f,:) = kr_re - 1i*abs(kr_im);
-                    
-                    % save modes
-                    mode_ind_sediment = find_in_vec(zm,curr_D + curr_H);
-                    phi_krak_mem(i_d,i_f,:,1:mode_ind_sediment) = modes';
-
+                    mode_ind = find_in_vec(zm,curr_D + curr_H);
+                    phi_krak_mem(i_d,i_f,:,1:mode_ind) = modes.';
                     z_axis_mem{i_d} = zm;
                     vg_krak_mem(i_d,i_f,:) = vg;
                 end
             end
-            
-
-
-
-
-
-
-
-
 
             %----------------------------------------------------------
             %==========================================================
             %       Use KRAKEN Results In Adiabatic Approximation 
             %==========================================================
             %----------------------------------------------------------
-            
+
             %----------------------------------------------
             %      KRAKEN Results at Each TOSSIT 
             %----------------------------------------------
@@ -318,9 +300,7 @@ for i_cb = 1:L_cb
             z_axis_r = cell(1,num_TOSSITs);
             i_zmr = zeros(1,num_TOSSITs);
             for t = 1:num_TOSSITs
-                % get depth axes at TOSSIT locations
                 z_axis_r{t} = z_axis_mem{TOSSITs_D_inds(t)};
-                % get index of hydrophone in depth axis (1 m above floor)
                 i_zmr(t) = find_in_vec(z_axis_r{t},TOSSITs_D(t)-1);
             end
 
@@ -346,7 +326,7 @@ for i_cb = 1:L_cb
 
                 % sample location
                 [y_s,x_s] = ind2sub(size(D_grid),randsample(loc_inds,1));
-
+                
                 %---------------------------------------------------------
                 %  Initialize Environmental Parameters For Source 
                 %---------------------------------------------------------
@@ -377,7 +357,7 @@ for i_cb = 1:L_cb
                                                   mesh_y(:,:,t));
 
                     % save source-receiver range
-                    ranges_s(t) = 1000 * r_list(end); % [m]
+                    ranges_s(t) = r_list(end); % [km]
 
                     % get depths along the source/receiver path and
                     % corresponding index in unique depth list
@@ -411,11 +391,11 @@ for i_cb = 1:L_cb
                     %-----------------------------------------
                     %    Integrate And Save Relevant Values 
                     %-----------------------------------------
-                    kr_integral(t,:,:) = squeeze(trapz((1000*r_list),kr_bathline,1)); % []
+                    kr_integral(t,:,:) = squeeze(trapz((1000*r_list),kr_bathline,1)); % [1/m]
                     vg_integral(t,:,:) = (1000*r_list(end)) ./ squeeze(trapz((1000*r_list),1./vg_bathline,1)); % [m/s]
                     vg_asym_integral(t,:) = (1000*r_list(end)) ./ squeeze(trapz((1000*r_list),1./vg_asym_bathline,1)); % [m/s]
                 end
-
+                
                 % check if shallow water flag triggered. if so go to
                 % another location
                 % TODO: if triggered sample another location
@@ -423,33 +403,25 @@ for i_cb = 1:L_cb
                     continue;
                 end
 
-
-
-
-
-
-
-
-
-
                 %----------------------------------------------------------
                 %==========================================================
                 %               Calculate Pressure Fields 
                 %==========================================================
-                %----------------------------------------------------------
-
+                %----------------------------------------------------------          
+                
                 % get complex scalar constant
-                Q = (1i*exp(-1i*pi/4)) ./ (rho_w*sqrt(8*pi*(ranges_s)));
-
+                Q = (1i*exp(-1i*pi/4)) ./ (rho_w*sqrt(8*pi*(1000*ranges_s)));
+                
                 % calculate arrival and end times of received signals
                 vg_integral(vg_integral == 0) = nan;
-                far_times = (ranges_s) ./ min(vg_integral, [], [2,3]).'; % [s]
-                close_times = (ranges_s) ./ max(vg_asym_integral,[],2).'; % [s]
-                
-                % calculate pressure fields for each source depth when possible
+                far_times = (1000*ranges_s) ./ min(vg_integral, [], [2,3]).'; % [s]
+                close_times = (1000*ranges_s) ./ max(vg_asym_integral,[],2).'; % [s]
+
+                % calculate pressure fields for each source depth when
+                % possible
                 call_num = 1;
                 for i_zs = 1:L_zs
-
+                    
                     % get current source depth
                     curr_zs = zs_vec(i_zs); % [m]
                 
@@ -486,7 +458,7 @@ for i_cb = 1:L_cb
                         t_far(:,call_num) = far_times;
                         t_close(:,call_num) = close_times;
                     end
-            
+                    
                     for ff = 1:Nf
                         for mm = 1:config.NM
                             
@@ -494,32 +466,32 @@ for i_cb = 1:L_cb
                             % given [ff,mm] are zero. check the integral
                             % and the wavenumber at the TOSSITs
                             if nnz(kr_integral(:,ff,mm)) && nnz(kr_krak_r(:,ff,mm))
+                                
                                 % if we've made it to this point, there is
                                 % signal at at least one TOSSIT for this
                                 % [ff,mm]. so we make a logical vector
                                 % indicating which are nonzero.
                                 valid_t_inds_logical = (kr_integral(:,ff,mm) ~= 0) & (kr_krak_r(:,ff,mm) ~= 0);
-
+                                
                                 % number of valid TOSSITs
                                 num_t = nnz(valid_t_inds_logical);
-
+                                
                                 % convert logical indicest to numerical
                                 t_inds = (1:num_TOSSITs).*valid_t_inds_logical';
                                 t_inds(t_inds == 0) = [];
-                            
+
                                 % get linear indices for modes at receiver
                                 phi_krak_r_inds = sub2ind(size(phi_krak_r),...
                                                           t_inds,...
                                                           ff*ones(1,num_t),...
                                                           mm*ones(1,num_t),...
                                                           i_zmr(valid_t_inds_logical));
-    
+
                                 % calculate pressure field
-                                p_m_f(ind_f(ff),mm,t_inds,call_num) = S(ind_f(ff))...
-                                                                    .*Q(t_inds)...
+                                p_m_f(ind_f(ff),mm,t_inds,call_num) = Q(t_inds)...
                                                                     .*phi_krak_s(ff,mm,i_zms(i_zs))...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        .*phi_krak_s(ff,mm,i_zms(i_zs))...
                                                                     .*phi_krak_r(phi_krak_r_inds)...
-                                                                    .*(exp(-1i*kr_integral(t_inds,ff,mm)) ./ sqrt(kr_krak_r(t_inds,ff,mm) .* ranges_s.')).'...
+                                                                    .*(exp(-1i*kr_integral(t_inds,ff,mm)) ./ sqrt(kr_krak_r(t_inds,ff,mm))).'...
                                                                     .*exp(2*1i*pi*freq_krak(ff)*t_close(t_inds,call_num)).';
                             end
                         end
@@ -527,7 +499,7 @@ for i_cb = 1:L_cb
                     % iterate call number if fully simulated
                     call_num = call_num + 1;
                 end
-
+                
                 % if no successful calls move on to next location
                 if call_num == 1
                     continue;
@@ -555,19 +527,176 @@ for i_cb = 1:L_cb
                 labels = labels(:,1:call_num-1);
                 t_far = t_far(:,1:call_num-1);
                 t_close = t_close(:,1:call_num-1);
-                
+
+                % add noise
                 if config.ADD_NOISE
-                    
                     % create label vector for SNRs
                     snr_labels = zeros(num_TOSSITs,call_num-1,'single');
-                
+                    
                     for call = 1:call_num-1
-                        % get signal at all TOSSITs
+                        % get a signal at all TOSSITs
                         signal_f = p_f(:,:,call);
+
+                        % sample noises
+                        sampled_noise = noise(:,randi(size(noise,2),1,num_TOSSITs));
+                        
+                        % randomly shift noise
+                        for n_ind = 1:num_TOSSITs
+                            sampled_noise(:,n_ind) = circshift(sampled_noise(:,n_ind),randi((1 / config.DF) * config.FS),1);
+                        end
+
+                        % take fft and trim to positive frequencies
+                        sampled_noise = fft(sampled_noise,nfft,1);
+                        fn_max_ind = find_in_vec(freq_sig,config.FS/2);
+                        sampled_noise(fn_max_ind:end,:) = 0;
+                        
+                        % add noise
+                        [signal_f,snr] = add_noise(signal_f,sampled_noise,config.SNR_RANGE);
+
+                        % update signal
+                        p_f(:,:,call) = signal_f;
+
+                        % save SNR labels
+                        snr_labels(:,call) = snr;
+                    end
+                    
+                    % add snr_labels to labels
+                    labels = [labels; snr_labels];
+                end
+
+                % randomly shift signals within simulated window
+                durations = t_far - t_close; % [s]
+                for call = 1:call_num-1
+                    for t = 1:num_TOSSITs
+                        p_f(:,t,call) = p_f(:,t,call).*(exp(2*1i*pi*freq_sig*randi(round((config.FS/config.DF) - durations(t,call))))).';
                     end
                 end
 
+                % load data struct for saving to disk
+                data.p_f = p_f;
+                data.labels = labels;
+                data.fs = config.FS;
+                data.df = config.DF;
+                data.i_loc = i_loc;
+                data.chunk_size = call_num - 1;
+                data.num_labels = size(labels,1);
+                data.t_close = t_close;
+                data.t_far = t_far;
+
+                % save results
+                if config.SAVE
+                    % send(q,data);
+                    update(data,config.SAVE_DATA_DIR,L_LSC,L_zs,nfft,num_TOSSITs,total_sims);
+                end
             end
         end
+    end
+end
+
+fprintf("Done!\n");
+
+function update(data,path,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
+    % UPDATE Callback function used to save data in chunks.
+    %
+    % Parameters
+    % ----------
+    % data:        data struct containing relevant objects for each save.
+    %               - p_f:        frequency domain signals.
+    %               - labels:     matrix of labels.
+    %               - fs:         sampling frequency.
+    %               - df:         discrete step used to sample frequency.
+    %               - i_loc:      index of sampled source location.
+    %               - chunk_size: number of simulated signals fed to 
+    %                             function.
+    %               - num_labels: number of labels in 'labels'.
+    %               - t_close:    arrival time of simulated signals at the 
+    %                             receiver.
+    %               - t_far:      end time of simulated signals at the 
+    %                             receiver.
+    % path:        path to directory where data is to be saved.
+    % L_CHUNK:     number of locations to save data from in a single file.
+    % N_SIGS:      number of signals simulated per location.
+    % num_TOSSITs: number of sensors.
+    % total_sims:  total number of simulated signals to be
+    %              produced/attempted.
+
+    % persistent variables to save
+    persistent p_f labels t_close t_far df fs;
+
+    % persistent counter to know when to save a file
+    persistent counter;
+
+    % initialize when called the first time. note that we initialize with
+    % an extra environment's worth of memory
+    if isempty(p_f)
+        t_far = zeros(num_TOSSITs,(L_CHUNK+1)*N_SIGS,'single');
+        t_close = zeros(num_TOSSITs,(L_CHUNK+1)*N_SIGS,'single');
+        p_f = zeros(nfft,num_TOSSITs,(L_CHUNK+1)*N_SIGS,'single');
+        labels = zeros(data.num_labels,(L_CHUNK+1)*N_SIGS,'single');
+        fs = data.fs;
+        df = data.df;
+    
+        counter = 1;
+    end
+
+    % add new data
+    t_far(:,counter:counter+data.chunk_size-1) = data.t_far;
+    t_close(:,counter:counter+data.chunk_size-1) = data.t_close;
+    p_f(:,:,counter:counter+data.chunk_size-1) = data.p_f;
+    labels(:,counter:counter+data.chunk_size-1) = data.labels;
+
+    % iterate counter
+    counter = counter + data.chunk_size;
+
+    if data.total_call_count == total_sims
+        % we are at the last chunk of data to be simulated and save now
+
+        % clear out remaining empty elements. there will always be extra
+        % because of the extra memory initialized
+        t_far(:,counter:end) = [];
+        t_close(:,counter:end) = [];
+        p_f(:,:,counter:end) = [];
+        labels(:,counter:end) = [];
+
+        % save calls
+        parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,fs,df,data.i_loc)
+        return;
+    elseif counter >= L_CHUNK*N_SIGS + 1
+        % if ew've filled the persistent variables, we save now
+
+        % save calls
+        parsave_TOSSIT_network(path,p_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df,data.i_loc)
+            
+        % reset persistent variables, carrying over extra signals that did
+        % not fit in the save chunk if they exist
+        mod_res = mod(counter,L_CHUNK*N_SIGS+1);
+        if mod_res == 0
+            % no left over signals
+
+            % zero out vectors
+            t_far(:) = 0;
+            t_close(:) = 0;
+            p_f(:) = 0;
+            labels(:) = 0;
+
+            % reset counter
+            counter = 1;
+        else
+            t_far(:,1:mod_res) = t_far(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            t_far(:,mod_res+1:end) = 0;
+            t_close(:,1:mod_res) = t_close(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            t_close(:,mod_res+1:end) = 0;
+            p_f(:,:,1:mod_res) = p_f(:,:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            p_f(:,:,mod_res+1:end) = 0;
+            labels(:,1:mod_res) = labels(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            labels(:,mod_res+1:end) = 0;
+
+            % reset counter
+            counter = mod_res + 1;
+        end
+
+        return;
+    else
+        return;
     end
 end
