@@ -34,6 +34,5 @@ function [noise] = load_experimental_noise(filepath, fs_dec, n, T)
         error("signals are less than 'T' seconds long.");
     else
         noise = noise(1:round(fs_dec * T),:);
-        noise = (1 / size(noise,1)) * fft(noise,size(noise,1),1);
     end
 end
