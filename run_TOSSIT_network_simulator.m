@@ -27,9 +27,9 @@ rng(1234);
 %             Simulation Settings
 %---------------------------------------------
 % add experimental noise flag
-config.ADD_NOISE = 1;
+config.ADD_NOISE = true;
 % save flag
-config.SAVE = 1;
+config.SAVE = true;
 % directory to save data to
 config.SAVE_DATA_DIR = 'data/sim_data';
 % number of parallel proesses
@@ -81,7 +81,7 @@ config.NOISE_FILE = 'data/noise/sbcex22_noise.hdf5';
 config.ZS_RANGE = [55 65]; % [m]
 config.DELTA_ZS = 2; % [m]
 % number of locations to sample
-config.N_LOCS = 1500; % []
+config.N_LOCS = 10; % []
 
 
 %---------------------------------------------
@@ -102,16 +102,16 @@ config.ALPHA_V = 0.95; % []
 %------------------Sediment Layer----------------
 % sound speed
 config.C_SED_RANGE = [1400 1600]; % [m/s]
-config.DELTA_C_SED = 15; % [m/s]
+config.DELTA_C_SED = 100; % [m/s]
 % thickness
 config.H_RANGE = [1 15]; % [m]
-config.DELTA_H = 2; % [m]
+config.DELTA_H = 5; % [m]
 % attenuation
 config.ALPHA_SED_RANGE = [0.05 0.05]; % [dB/lambda]
 %-----------------Basement Layer-----------------
 % sound speed
 config.CB_RANGE = [1600 2200]; % [m/s]
-config.DELTA_CB = 40; % [m/s]
+config.DELTA_CB = 200; % [m/s]
 % attenuation
 config.ALPHA_B_RANGE = [0.25 0.25]; % [dB/lambda]
 
