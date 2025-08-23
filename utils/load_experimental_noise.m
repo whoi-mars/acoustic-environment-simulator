@@ -1,6 +1,6 @@
 function [noise] = load_experimental_noise(filepath, fs_dec, n, T)
     % LOAD_EXPERIMENTAL_NOISE load noise signals from experimental data
-    % from an H5 file.
+    % from an H5 file and transform into frequency domain.
     %
     % Parameters
     % ----------
@@ -34,5 +34,6 @@ function [noise] = load_experimental_noise(filepath, fs_dec, n, T)
         error("signals are less than 'T' seconds long.");
     else
         noise = noise(1:round(fs_dec * T),:);
+        noise = (1 / size(noise,1)) * fft(noise,size(noise,1),1);
     end
 end
