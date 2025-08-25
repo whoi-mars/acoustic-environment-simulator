@@ -120,6 +120,7 @@ config.ALPHA_B_RANGE = [0.25 0.25]; % [dB/lambda]
 %---------------------------------------------
 config.POST_PROCESS = true;
 config.PYENV_PATH = "C:\Users\goldw\anaconda3\envs\torch_env\python.exe";
+config.TRAIN_VAL_TEST_SPLIT = [0.8 0.1 0.1];
 
 %------------------------------------------------------------------------
 %========================================================================

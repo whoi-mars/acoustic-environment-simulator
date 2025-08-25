@@ -12,17 +12,20 @@ struct2json(config,fullfile(config.SAVE_DATA_DIR,'config.json'));
 %------------------------
 %    Setup Python env
 %------------------------
-if config.post_process
+if config.POST_PROCESS
     pyenv("Version", config.PYENV_PATH, "ExecutionMode","OutOfProcess");
 end
 
-% pe = pyenv;
-% cmd = sprintf('"%s" "%s" "%s"', pe.Executable, ...
-%     'C:/Users/goldw/Desktop/acoustic-environment-simulator/python/post_process.py', ...
-%     config.SAVE_DATA_DIR);
-% [status, out] = system(cmd);
-% disp(out)
-% assert(status == 0, "Python exited with status %d", status);
+pe = pyenv;
+cmd = sprintf('"%s" "%s" "%s" "%d" "%d" "%d"', pe.Executable, ...
+    'C:/Users/goldw/Desktop/acoustic-environment-simulator/python/post_process.py', ...
+    config.SAVE_DATA_DIR, ...
+    config.TRAIN_VAL_TEST_SPLIT(1), ...
+    config.TRAIN_VAL_TEST_SPLIT(2), ...
+    config.TRAIN_VAL_TEST_SPLIT(3));
+[status, out] = system(cmd);
+disp(out)
+assert(status == 0, "Python exited with status %d", status);
 
 %---------------------------------------------
 %     Get TOSSIT/Bathymetry Information

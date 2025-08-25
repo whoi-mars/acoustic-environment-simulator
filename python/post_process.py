@@ -3,7 +3,12 @@ import os
 import glob
 import h5py
 import json
+import numpy as np
 from utils.split import train_test_split_inds
+
+##########################################################################
+#                        CREATE VIRTUAL DATASET                          #
+##########################################################################
 
 # where the data has been saved
 data_dir = sys.argv[1]
@@ -76,5 +81,18 @@ with h5py.File(os.path.join(data_dir, "VDS_main.h5"), 'w', libver='latest') as f
     for k in entry_keys:
         f.create_virtual_dataset(k, layout_dict[k], fillvalue=0)
         
+##########################################################################
+#                GENERATE TRAIN/VAL/TEST SPLIT INDICES                   #
+##########################################################################
 
-            
+# get split percentages
+train_split, val_split, test_split = float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4])
+
+# get split indices
+train_inds, val_inds, test_inds = train_test_split_inds(np.arange(total_length), train_size=train_split, test_size=test_split, val_size=val_split)
+
+# save indices
+np.savez(os.path.join(data_dir, "split_indices.npz"),
+         train_inds=train_inds,
+         val_inds=val_inds,
+         test_inds=test_inds)
