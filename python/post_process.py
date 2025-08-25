@@ -1,0 +1,80 @@
+import sys
+import os
+import glob
+import h5py
+import json
+from utils.split import train_test_split_inds
+
+# where the data has been saved
+data_dir = sys.argv[1]
+
+# load config file JSON and get lower case keys
+with open(os.path.join(data_dir, 'config.json'), 'r') as f:
+    config = json.load(f)
+config_keys = [k.lower() for k in config.keys()]
+
+# get .h5 files in data directory
+files = glob.glob(sys.argv[1] + '/*.h5')
+
+# get keys in each data file by peaking at one
+with h5py.File(files[0], "r") as f:
+    entry_keys = list(f.keys())
+
+# determine which keys are config variables because
+# these are constant and only need one virtual source
+stored_config_keys = []
+data_keys = []
+for k in entry_keys:
+    if k.lower() in config_keys:
+        stored_config_keys.append(k)
+    else:
+        data_keys.append(k)
+
+sources_dict = {k : [] for k in entry_keys} # store virtual sources for each key
+shape_dict = {} # store data shape for each key
+dtype_dict = {} # store data type for each key
+total_length = 0 # keep track of dataset length
+
+for i, filename in enumerate(files, start=1):
+    with h5py.File(filename, 'r') as f:
+        for k in entry_keys:
+
+            # use first file to get entry shapes and dtypes
+            if i == 1:
+                shape_dict[k] = f[k].shape[1:]
+                dtype_dict[k] = f[k].dtype
+
+            # only add one osurce for keys that are also in the config
+            # because they are assumed constant
+            if k in stored_config_keys and i > 1:
+                continue
+            else:
+                vsource = h5py.VirtualSource(f[k])
+                sources_dict[k].append(vsource)
+        
+        # add to total dataset length
+        total_length += f[data_keys[0]].shape[0]
+
+# make layouts
+layout_dict = {}
+for k in entry_keys:
+    if k in data_keys:
+        layout_dict[k] = h5py.VirtualLayout(shape=(total_length,)+shape_dict[k], dtype=dtype_dict[k])
+    else:
+        layout_dict[k] = h5py.VirtualLayout(shape=(1,)+shape_dict[k], dtype=dtype_dict[k])
+
+# fill layouts
+for k in entry_keys:
+    offset = 0
+    for vsource in sources_dict[k]:
+        length = vsource.shape[0]
+        layout_dict[k][offset:offset+length] = vsource
+        offset += length
+
+# create virtual dataset
+with h5py.File(os.path.join(data_dir, "VDS_main.h5"), 'w', libver='latest') as f:
+    for k in entry_keys:
+        f.create_virtual_dataset(k, layout_dict[k], fillvalue=0)
+        
+
+            

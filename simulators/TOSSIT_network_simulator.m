@@ -9,6 +9,21 @@
 %------------------------
 struct2json(config,fullfile(config.SAVE_DATA_DIR,'config.json'));
 
+%------------------------
+%    Setup Python env
+%------------------------
+if config.post_process
+    pyenv("Version", config.PYENV_PATH, "ExecutionMode","OutOfProcess");
+end
+
+% pe = pyenv;
+% cmd = sprintf('"%s" "%s" "%s"', pe.Executable, ...
+%     'C:/Users/goldw/Desktop/acoustic-environment-simulator/python/post_process.py', ...
+%     config.SAVE_DATA_DIR);
+% [status, out] = system(cmd);
+% disp(out)
+% assert(status == 0, "Python exited with status %d", status);
+
 %---------------------------------------------
 %     Get TOSSIT/Bathymetry Information
 %---------------------------------------------
@@ -425,6 +440,7 @@ for i_cb = 1:L_cb
                 % another location
                 % TODO: if triggered sample another location
                 if shallow_flag
+                    warning("shallow water");
                     continue;
                 end
 
@@ -460,6 +476,7 @@ for i_cb = 1:L_cb
                 
                     % ensure source depth is in water column. if not skip 
                     if nnz(curr_zs >= Ds_bath_path)
+                        warning("skip z");
                         continue;
                     end
 
@@ -524,7 +541,7 @@ for i_cb = 1:L_cb
                                                                     .*Q(t_inds)...
                                                                     .*phi_krak_s(ff,mm,i_zms(i_zs))...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        .*phi_krak_s(ff,mm,i_zms(i_zs))...
                                                                     .*phi_krak_r(phi_krak_r_inds)...
-                                                                    .*(exp(-1i*kr_integral(t_inds,ff,mm)) ./ sqrt(kr_krak_r(t_inds,ff,mm) .* ranges_s.')).'...
+                                                                    .*(exp(-1i*kr_integral(t_inds,ff,mm)) ./ sqrt(kr_krak_r(t_inds,ff,mm) .* ranges_s(t_inds).')).'...
                                                                     .*exp(2*1i*pi*freq_krak(ff)*t_close(t_inds,call_num)).';
                             end
                         end
@@ -535,6 +552,7 @@ for i_cb = 1:L_cb
 
                 % if no successful calls move on to next location
                 if call_num == 1
+                    warning("no successful calls");
                     continue;
                 end
 
@@ -630,6 +648,20 @@ for i_cb = 1:L_cb
 end
 
 fprintf("Done!\n");
+fprintf("Post Processing...");
+
+if config.POST_PROCESS
+    pe = pyenv;
+    cmd = sprintf('"%s" "%s" "%s"', pe.Executable, ...
+        'C:/Users/goldw/Desktop/acoustic-environment-simulator/python/post_process.py', ...
+        config.SAVE_DATA_DIR);
+    [status, out] = system(cmd);
+    disp(out)
+    assert(status == 0, "Python exited with status %d", status);
+end
+
+fprintf("Done!\n");
+
 
 function update(data,path,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
     % UPDATE Callback function used to save data in chunks.
@@ -687,15 +719,26 @@ function update(data,path,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
     if data.total_call_count == total_sims
         % we are at the last chunk of data to be simulated and save now
 
-        % clear out remaining empty elements. there will always be extra
-        % because of the extra memory initialized
-        t_far(:,counter:end) = [];
-        t_close(:,counter:end) = [];
-        p_f(:,:,counter:end) = [];
-        labels(:,counter:end) = [];
+        if counter >= L_CHUNK*N_SIGS + 1
+            % save full file
+            parsave_TOSSIT_network(path,p_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df,data.i_loc)
+            
+            % pause so timestamps are unique
+            pause(10);
 
-        % save calls
-        parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,fs,df,data.i_loc)
+            % save remainder
+            parsave_TOSSIT_network(path,p_f(:,:,L_CHUNK*N_SIGS+1:counter-1),t_far(:,L_CHUNK*N_SIGS+1:counter-1),t_close(:,L_CHUNK*N_SIGS+1:counter-1),labels(:,L_CHUNK*N_SIGS+1:counter-1),fs,df,data.i_loc)
+        else
+            % clear out remaining empty elements. there will always be extra
+            % because of the extra memory initialized
+            t_far(:,counter:end) = [];
+            t_close(:,counter:end) = [];
+            p_f(:,:,counter:end) = [];
+            labels(:,counter:end) = [];
+    
+            % save calls
+            parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,fs,df,data.i_loc)
+        end
         return;
     elseif counter >= L_CHUNK*N_SIGS + 1
         % if we've filled the persistent variables, we save now

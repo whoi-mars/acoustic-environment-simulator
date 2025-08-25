@@ -27,7 +27,7 @@ rng(1234);
 %             Simulation Settings
 %---------------------------------------------
 % add experimental noise flag
-config.ADD_NOISE = true;
+config.ADD_NOISE = false;
 % save flag
 config.SAVE = true;
 % directory to save data to
@@ -114,6 +114,12 @@ config.CB_RANGE = [1600 2200]; % [m/s]
 config.DELTA_CB = 200; % [m/s]
 % attenuation
 config.ALPHA_B_RANGE = [0.25 0.25]; % [dB/lambda]
+
+%---------------------------------------------
+%      Specify Python For Post Processing
+%---------------------------------------------
+config.POST_PROCESS = true;
+config.PYENV_PATH = "C:\Users\goldw\anaconda3\envs\torch_env\python.exe";
 
 %------------------------------------------------------------------------
 %========================================================================
