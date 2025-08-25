@@ -118,8 +118,11 @@ config.ALPHA_B_RANGE = [0.25 0.25]; % [dB/lambda]
 %---------------------------------------------
 %      Specify Python For Post Processing
 %---------------------------------------------
+% whether or not to post process data files
 config.POST_PROCESS = true;
+% python path
 config.PYENV_PATH = "C:\Users\goldw\anaconda3\envs\torch_env\python.exe";
+% dataset split
 config.TRAIN_VAL_TEST_SPLIT = [0.8 0.1 0.1];
 
 %------------------------------------------------------------------------

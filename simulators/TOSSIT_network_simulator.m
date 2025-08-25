@@ -16,16 +16,16 @@ if config.POST_PROCESS
     pyenv("Version", config.PYENV_PATH, "ExecutionMode","OutOfProcess");
 end
 
-pe = pyenv;
-cmd = sprintf('"%s" "%s" "%s" "%d" "%d" "%d"', pe.Executable, ...
-    'C:/Users/goldw/Desktop/acoustic-environment-simulator/python/post_process.py', ...
-    config.SAVE_DATA_DIR, ...
-    config.TRAIN_VAL_TEST_SPLIT(1), ...
-    config.TRAIN_VAL_TEST_SPLIT(2), ...
-    config.TRAIN_VAL_TEST_SPLIT(3));
-[status, out] = system(cmd);
-disp(out)
-assert(status == 0, "Python exited with status %d", status);
+% pe = pyenv;
+% cmd = sprintf('"%s" "%s" "%s" "%d" "%d" "%d"', pe.Executable, ...
+%     'C:/Users/goldw/Desktop/acoustic-environment-simulator/python/post_process.py', ...
+%     config.SAVE_DATA_DIR, ...
+%     config.TRAIN_VAL_TEST_SPLIT(1), ...
+%     config.TRAIN_VAL_TEST_SPLIT(2), ...
+%     config.TRAIN_VAL_TEST_SPLIT(3));
+% [status, out] = system(cmd);
+% disp(out)
+% assert(status == 0, "Python exited with status %d", status);
 
 %---------------------------------------------
 %     Get TOSSIT/Bathymetry Information
@@ -182,11 +182,19 @@ S(min_ind_f:max_ind_f) = 1;
 fprintf("Done!\n");
 fprintf("Run Simulation...");
 
-% set up queue if saving
+%------------------------------------------------
+%         Parallel Pool For Saving Data
+%------------------------------------------------
 if config.SAVE
     q = parallel.pool.DataQueue;
     afterEach(q,@(data) update(data,config.SAVE_DATA_DIR,L_LSC,L_zs,nfft,num_TOSSITs,total_sims));
 end
+
+%------------------------------------------------
+%      Parallel Pool For Displaying Progress
+%------------------------------------------------
+prog_q = parallel.pool.DataQueue;
+afterEach(prog_q, @(prog_info) updateProgress(prog_info));
 
 % start parallel pool
 % p = parpool(config.N);
@@ -217,12 +225,12 @@ for i_cb = 1:L_cb
             alpha_b = unifrnd(config.ALPHA_B_RANGE(1),config.ALPHA_B_RANGE(2)); % [dB/lambda]
 
             % display progress
-            fprintf("\n%d/%d -- c_b: %s m/s -- c_sed: %s m/s -- H: %s m\n",...
-                    sub2ind([L_H,L_c_sed,L_cb],i_H,i_c_sed,i_cb),...
+            prog_info = sprintf("/%d -- c_b: %s m/s -- c_sed: %s m/s -- H: %s m\n",...
                     L_H*L_c_sed*L_cb,...
                     string(curr_cb),...
                     string(curr_c_sed),...
                     string(curr_H));
+            send(prog_q, prog_info);
 
             %----------------------------------------------
             %   Run KRAKEN For All Depths In Environment 
@@ -665,6 +673,32 @@ end
 
 fprintf("Done!\n");
 
+
+
+
+
+
+function updateProgress(prog_info)
+    % UPDATEPROGRESS Callback function to display the progress in iterating 
+    % through the different environments.
+    % 
+    % Parameters
+    % ----------
+    % prog_info : string that displays progress the "counter" value is
+    %             prepended to the beginning of it before display.
+
+    % load/initialize counter for environmnets
+    persistent counter;
+    if isempty(counter)
+        counter = 1;
+    end
+    
+    % display progress
+    fprintf("\n" + string(counter) + prog_info);
+    
+    % iterate counter
+    counter = counter + 1;
+end
 
 function update(data,path,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
     % UPDATE Callback function used to save data in chunks.
