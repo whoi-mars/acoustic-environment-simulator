@@ -30,8 +30,8 @@ rng(1234);
 config.ADD_NOISE = false;
 % save flag
 config.SAVE = true;
-% directory to save data to
-config.SAVE_DATA_DIR = 'data/sim_data';
+% directory to save data to (THIS PATH MUST BE ABSOLUTE)
+config.SAVE_DATA_DIR = 'C:/Users/goldw/Desktop/acoustic-environment-simulator/data/sim_data';
 % number of parallel proesses
 config.N = 2;
 % frequency value to approximate vg as f --> infinity
