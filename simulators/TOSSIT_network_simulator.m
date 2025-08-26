@@ -659,9 +659,9 @@ for i_cb = 1:L_cb
 end
 
 fprintf("Done!\n");
-fprintf("Post Processing...");
 
 if config.POST_PROCESS
+    fprintf("Post Processing...");
     pe = pyenv;
     cmd = sprintf('"%s" "%s" "%s" "%d" "%d" "%d"', pe.Executable, ...
         'C:/Users/goldw/Desktop/acoustic-environment-simulator/python/post_process.py', ...
@@ -672,9 +672,8 @@ if config.POST_PROCESS
     [status, out] = system(cmd);
     disp(out)
     assert(status == 0, "Python exited with status %d", status);
+    fprintf("Done!\n");
 end
-
-fprintf("Done!\n");
 
 
 
