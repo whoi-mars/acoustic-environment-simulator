@@ -35,7 +35,7 @@ config.SAVE_DATA_DIR = 'C:/Users/goldw/Desktop/acoustic-environment-simulator/da
 % number of parallel proesses
 config.N = 2;
 % frequency value to approximate vg as f --> infinity
-config.FREQ_ASYM = 400;
+config.FREQ_ASYM = 300;
 % delta r for range integration
 config.DR = 0.5; % [km]
 % number of locations to save in a file
