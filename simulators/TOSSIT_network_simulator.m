@@ -397,6 +397,7 @@ for i_cb = 1:L_cb
                 z_axis_s = z_axis_mem{Ds_ind}; % [m]
                 i_zms = find_in_vec(z_axis_s,zs_vec');
                 vg_integral = zeros(num_TOSSITs,Nf,config.NM); % [m/s]
+                disp_curves = zeros(num_TOSSITs,Nf,config.NM); % [s]
                 vg_asym_integral = zeros(num_TOSSITs,config.NM); % [m/s]
 
                 % flag for if a shallow bathymetry region is crossed for a
@@ -453,6 +454,7 @@ for i_cb = 1:L_cb
                     %-----------------------------------------
                     kr_integral(t,:,:) = squeeze(trapz((1000*r_list),kr_bathline,1)); % []
                     vg_integral(t,:,:) = (1000*r_list(end)) ./ squeeze(trapz((1000*r_list),1./vg_bathline,1)); % [m/s]
+                    disp_curves(t,:,:) = 1000*r_list(end) / vg_integral(t,:,:);
                     vg_asym_integral(t,:) = (1000*r_list(end)) ./ squeeze(trapz((1000*r_list),1./vg_asym_bathline,1)); % [m/s]
                 end
 
@@ -670,7 +672,7 @@ for i_cb = 1:L_cb
                     nfftp = floor((nfft + 1) / 2);
                 end
                 data.vg_integral = NaN(num_TOSSITs,nfftp,config.NM,call_num-1);
-                data.vg_integral(:,min_ind_f:max_ind_f,:,:) = repmat(vg_integral,1,1,1,call_num-1);
+                data.vg_integral(:,min_ind_f:max_ind_f,:,:) = repmat(disp_curves,1,1,1,call_num-1);
 
                 
                 % save results
