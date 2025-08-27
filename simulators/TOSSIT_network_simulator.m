@@ -60,20 +60,22 @@ end
 %           KLE Sound Speed Sampler
 %---------------------------------------------
 fprintf('Loading CTD Data...')
-% load data
-[CTD, full_depth_vec] = load_asc_CTD_data(config.CTD_PATH,config.DZ,'fill_top',true);
-
-% isolate sound speed
-C_data = CTD(:,:,end);
-
-% make zeros (where data was not sampled) NaN values
-for i=1:size(C_data,1)
-    ind = find(C_data(i,:),1,'last');
-    C_data(i,ind+1:end) = NaN;
+if ~config.CONST_SSP
+    % load data
+    [CTD, full_depth_vec] = load_asc_CTD_data(config.CTD_PATH,config.DZ,'fill_top',true);
+    
+    % isolate sound speed
+    C_data = CTD(:,:,end);
+    
+    % make zeros (where data was not sampled) NaN values
+    for i=1:size(C_data,1)
+        ind = find(C_data(i,:),1,'last');
+        C_data(i,ind+1:end) = NaN;
+    end
+    
+    % create SSP sampler
+    kle = KLE(C_data,'sigma',12);
 end
-
-% create SSP sampler
-kle = KLE(C_data,'sigma',12);
 fprintf('Done!\n')
 
 %---------------------------------------------
@@ -218,7 +220,12 @@ for i_cb = 1:L_cb
             curr_H = H_vec(i_H); % [m]
 
             % sample/calculate remaining parameters
-            [c_w, lambda] = kle.sample(1,config.ALPHA_V,'coeffs',true);
+            if config.CONST_SSP
+                c_w = config.CONST_SSP_VAL;
+                full_depth_vec = 0;
+            else
+                [c_w, lambda] = kle.sample(1,config.ALPHA_V,'coeffs',true);
+            end
             rho_sed = hamilton(curr_c_sed); % [g/cm^3]
             rho_b = hamilton(curr_cb); % [g/cm^3]
             alpha_sed = unifrnd(config.ALPHA_SED_RANGE(1),config.ALPHA_SED_RANGE(2)); % [dB/lambda]
@@ -365,7 +372,9 @@ for i_cb = 1:L_cb
                 %----------------------------------------------
                 %                Labels/Metadata
                 %----------------------------------------------
-                cw_coeffs = zeros(length(lambda),L_zs,'single');
+                if ~config.CONST_SSP
+                    cw_coeffs = zeros(length(lambda),L_zs,'single');
+                end
                 cb_labels = zeros(1,L_zs,'single'); % [m/s]
                 c_sed_labels = zeros(1,L_zs,'single'); % [m/s]
                 H_labels = zeros(1,L_zs,'single'); % [m]
@@ -494,7 +503,9 @@ for i_cb = 1:L_cb
                     %----------------------------------------------
                     %           Store Labels/Metadata
                     %----------------------------------------------
-                    cw_coeffs(:,call_num) = lambda;
+                    if ~config.CONST_SSP
+                        cw_coeffs(:,call_num) = lambda;
+                    end
                     cb_labels(call_num) = curr_cb; % [m/s]
                     c_sed_labels(call_num) = curr_c_sed; % [m/s]
                     H_labels(call_num) = curr_H; % [m]
@@ -576,13 +587,16 @@ for i_cb = 1:L_cb
                 p_f = squeeze(sum(p_m_f,2));
 
                 % aggregate labels
-                labels = [cw_coeffs
-                          cb_labels
+                labels = [cb_labels
                           c_sed_labels
                           H_labels
                           zs_labels
                           loc_labels
                           r_labels];
+                if ~config.CONST_SSP
+                    labels = [cw_coeffs
+                              labels];
+                end
 
                 % trim to simulated calls
                 p_f = p_f(:,:,1:call_num-1);
@@ -780,7 +794,7 @@ function update(data,path,NM,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
     if data.total_call_count == total_sims
         % we are at the last chunk of data to be simulated and save now
 
-        if counter >= L_CHUNK*N_SIGS + 1
+        if counter >= L_CHUNK*N_SIGS + 2
             % save full file
             parsave_TOSSIT_network(path,p_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),vg_integral(:,:,:,1:L_CHUNK*N_SIGS),fs,df,data.i_loc)
             

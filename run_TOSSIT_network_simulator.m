@@ -29,7 +29,7 @@ rng(1234);
 % add experimental noise flag
 config.ADD_NOISE = false;
 % save flag
-config.SAVE = false;
+config.SAVE = true;
 % directory to save data to (THIS PATH MUST BE ABSOLUTE)
 config.SAVE_DATA_DIR = 'C:/Users/goldw/Desktop/acoustic-environment-simulator/data/sim_data';
 % number of parallel proesses
@@ -54,7 +54,7 @@ config.ENV_BOUNDS = [40.55 -70.67
                      40.4 -70.46
                      40.55 -70.46]; % [UL; LL; LR; UR]
 % path to bathymetry file
-config.BATH_FILE = 'data/bathymetry/MudpatchDEM.mat';
+config.BATH_FILE = 'data/bathymetry/MudpatchDEM70.mat';
 
 %---------------------------------------------
 %               Signal Parameters
@@ -94,6 +94,8 @@ config.BATHYM_ROUND = 0.5; % []
 config.LOC_DILATION = 2; % []
 %-------------------Water Column-----------------
 % path to CTD data
+config.CONST_SSP = true;
+config.CONST_SSP_VAL = 1500;  
 config.CTD_PATH = 'data/ctd';
 % depth vector spacing for SSP
 config.DZ = 1; % [m]
@@ -101,17 +103,17 @@ config.DZ = 1; % [m]
 config.ALPHA_V = 0.95; % []
 %------------------Sediment Layer----------------
 % sound speed
-config.C_SED_RANGE = [1400 1600]; % [m/s]
-config.DELTA_C_SED = 100; % [m/s]
+config.C_SED_RANGE = [1600 1600]; % [m/s]
+config.DELTA_C_SED = 1; % [m/s]
 % thickness
-config.H_RANGE = [1 15]; % [m]
-config.DELTA_H = 5; % [m]
+config.H_RANGE = [10 10]; % [m]
+config.DELTA_H = 1; % [m]
 % attenuation
 config.ALPHA_SED_RANGE = [0.05 0.05]; % [dB/lambda]
 %-----------------Basement Layer-----------------
 % sound speed
-config.CB_RANGE = [1600 2200]; % [m/s]
-config.DELTA_CB = 200; % [m/s]
+config.CB_RANGE = [1800 1800]; % [m/s]
+config.DELTA_CB = 1; % [m/s]
 % attenuation
 config.ALPHA_B_RANGE = [0.25 0.25]; % [dB/lambda]
 
