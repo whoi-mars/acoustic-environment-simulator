@@ -29,7 +29,7 @@ rng(1234);
 % add experimental noise flag
 config.ADD_NOISE = false;
 % save flag
-config.SAVE = true;
+config.SAVE = false;
 % directory to save data to (THIS PATH MUST BE ABSOLUTE)
 config.SAVE_DATA_DIR = 'C:/Users/goldw/Desktop/acoustic-environment-simulator/data/sim_data';
 % number of parallel proesses
