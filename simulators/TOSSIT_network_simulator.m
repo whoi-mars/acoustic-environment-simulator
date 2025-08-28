@@ -671,9 +671,9 @@ for i_cb = 1:L_cb
                 else
                     nfftp = floor((nfft + 1) / 2);
                 end
-                data.vg_integral = NaN(num_TOSSITs,nfftp,config.NM,call_num-1);
-                data.vg_integral(:,min_ind_f:max_ind_f,:,:) = repmat(disp_curves,1,1,1,call_num-1);
-
+                data.disp_curves = NaN(num_TOSSITs,nfftp,config.NM,call_num-1);
+                data.disp_curves(:,min_ind_f:max_ind_f,:,:) = repmat(disp_curves,1,1,1,call_num-1);
+                data.disp_curves(data.disp_curves == 0 | data.disp_curves == inf) = nan;
                 
                 % save results
                 if config.SAVE
@@ -788,7 +788,7 @@ function update(data,path,NM,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
     t_close(:,counter:counter+data.chunk_size-1) = data.t_close;
     p_f(:,:,counter:counter+data.chunk_size-1) = data.p_f;
     labels(:,counter:counter+data.chunk_size-1) = data.labels;
-    disp_curves(:,:,:,counter:counter+data.chunk_size-1) = data.vg_integral;
+    disp_curves(:,:,:,counter:counter+data.chunk_size-1) = data.disp_curves;
 
     % iterate counter
     counter = counter + data.chunk_size;
