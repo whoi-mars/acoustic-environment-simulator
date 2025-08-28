@@ -757,7 +757,7 @@ function update(data,path,NM,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
     %              produced/attempted.
 
     % persistent variables to save
-    persistent p_f labels t_close t_far vg_integral df fs;
+    persistent p_f labels t_close t_far disp_curves df fs;
 
     % persistent counter to know when to save a file
     persistent counter;
@@ -775,7 +775,7 @@ function update(data,path,NM,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
         else
             nfftp = floor((nfft + 1) / 2);
         end
-        vg_integral = zeros(num_TOSSITs,nfftp,NM,(L_CHUNK+1)*N_SIGS,'single');
+        disp_curves = zeros(num_TOSSITs,nfftp,NM,(L_CHUNK+1)*N_SIGS,'single');
         
         fs = data.fs;
         df = data.df;
@@ -788,7 +788,7 @@ function update(data,path,NM,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
     t_close(:,counter:counter+data.chunk_size-1) = data.t_close;
     p_f(:,:,counter:counter+data.chunk_size-1) = data.p_f;
     labels(:,counter:counter+data.chunk_size-1) = data.labels;
-    vg_integral(:,:,:,counter:counter+data.chunk_size-1) = data.vg_integral;
+    disp_curves(:,:,:,counter:counter+data.chunk_size-1) = data.vg_integral;
 
     % iterate counter
     counter = counter + data.chunk_size;
@@ -798,13 +798,13 @@ function update(data,path,NM,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
 
         if counter >= L_CHUNK*N_SIGS + 2
             % save full file
-            parsave_TOSSIT_network(path,p_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),vg_integral(:,:,:,1:L_CHUNK*N_SIGS),fs,df,data.i_loc)
+            parsave_TOSSIT_network(path,p_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),disp_curves(:,:,:,1:L_CHUNK*N_SIGS),fs,df,data.i_loc)
             
             % pause so timestamps are unique
             pause(10);
 
             % save remainder
-            parsave_TOSSIT_network(path,p_f(:,:,L_CHUNK*N_SIGS+1:counter-1),t_far(:,L_CHUNK*N_SIGS+1:counter-1),t_close(:,L_CHUNK*N_SIGS+1:counter-1),labels(:,L_CHUNK*N_SIGS+1:counter-1),vg_integral(:,:,:,L_CHUNK*N_SIGS+1:counter-1),fs,df,data.i_loc)
+            parsave_TOSSIT_network(path,p_f(:,:,L_CHUNK*N_SIGS+1:counter-1),t_far(:,L_CHUNK*N_SIGS+1:counter-1),t_close(:,L_CHUNK*N_SIGS+1:counter-1),labels(:,L_CHUNK*N_SIGS+1:counter-1),disp_curves(:,:,:,L_CHUNK*N_SIGS+1:counter-1),fs,df,data.i_loc)
         else
             % clear out remaining empty elements. there will always be extra
             % because of the extra memory initialized
@@ -812,17 +812,17 @@ function update(data,path,NM,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
             t_close(:,counter:end) = [];
             p_f(:,:,counter:end) = [];
             labels(:,counter:end) = [];
-            vg_integral(:,:,:,counter:end) = [];
+            disp_curves(:,:,:,counter:end) = [];
     
             % save calls
-            parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,vg_integral,fs,df,data.i_loc)
+            parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,disp_curves,fs,df,data.i_loc)
         end
         return;
     elseif counter >= L_CHUNK*N_SIGS + 1
         % if we've filled the persistent variables, we save now
 
         % save calls
-        parsave_TOSSIT_network(path,p_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),vg_integral(:,:,:,1:L_CHUNK*N_SIGS),fs,df,data.i_loc)
+        parsave_TOSSIT_network(path,p_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),disp_curves(:,:,:,1:L_CHUNK*N_SIGS),fs,df,data.i_loc)
             
         % reset persistent variables, carrying over extra signals that did
         % not fit in the save chunk if they exist
@@ -835,7 +835,7 @@ function update(data,path,NM,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
             t_close(:) = 0;
             p_f(:) = 0;
             labels(:) = 0;
-            vg_integral(:) = 0;
+            disp_curves(:) = 0;
 
             % reset counter
             counter = 1;
@@ -848,8 +848,8 @@ function update(data,path,NM,L_CHUNK,N_SIGS,nfft,num_TOSSITs,total_sims)
             p_f(:,:,mod_res+1:end) = 0;
             labels(:,1:mod_res) = labels(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
             labels(:,mod_res+1:end) = 0;
-            vg_integral(:,:,:,1:mod_res) = vg_integral(:,:,:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
-            vg_integral(:,:,:,mod_res+1:end) = 0;
+            disp_curves(:,:,:,1:mod_res) = disp_curves(:,:,:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            disp_curves(:,:,:,mod_res+1:end) = 0;
 
             % reset counter
             counter = mod_res + 1;

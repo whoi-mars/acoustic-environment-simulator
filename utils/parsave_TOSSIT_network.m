@@ -1,4 +1,4 @@
-function parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,vg_integal,fs,df,i_loc)
+function parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,disp_curves,fs,df,i_loc)
     % PARSAVE_TOSSIT_NETWORK Save data into HDF5 file.
     %
     % Parameters
@@ -8,7 +8,7 @@ function parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,vg_integal,fs,df,i
     % t_far:       end time of simulated signals at the receiver.
     % t_close:     arrival time of simulated signals at the receiver.
     % labels:      matrix of labels
-    % vg_integral: group speeds for each mode.
+    % disp_curves: group speeds for each mode.
     % fs:          sampling frequency
     % df:          discrete step used to sample frequency
     % i_loc:       index of sampled source location
@@ -22,7 +22,7 @@ function parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,vg_integal,fs,df,i
     h5create(file_path,"/t_far",size(t_far),'Datatype','single','Chunksize',[size(t_far,1) 1]);    
     h5create(file_path,"/t_close",size(t_close),'Datatype','single','Chunksize',[size(t_close,1) 1]);
     h5create(file_path,"/labels",size(labels),'Datatype','single','Chunksize',[size(labels,1) 1]);
-    h5create(file_path,"/vg_integral",size(vg_integal),'Datatype','single','Chunksize',[size(vg_integal,[1 2 3]) 1]);
+    h5create(file_path,"/disp_curves",size(disp_curves),'Datatype','single','Chunksize',[size(disp_curves,[1 2 3]) 1]);
     h5create(file_path,"/fs",size(fs));
     h5create(file_path,"/df",size(df));
 
@@ -32,7 +32,7 @@ function parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,vg_integal,fs,df,i
     h5write(file_path,"/t_far",t_far);
     h5write(file_path,"/t_close",t_close);
     h5write(file_path,"/labels",labels);
-    h5write(file_path,"/vg_integral",vg_integal);
+    h5write(file_path,"/disp_curves",disp_curves);
     h5write(file_path,"/fs",fs);
     h5write(file_path,"/df",df);
 end
