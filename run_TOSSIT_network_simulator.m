@@ -40,7 +40,7 @@ config.FREQ_ASYM = 300;
 config.DR = 0.5; % [km]
 % number of locations to save in a file (make sure saving more than one
 % signal per file)
-config.LOC_SAVE_CHUNK = 100;
+config.LOC_SAVE_CHUNK = 5;
 
 %---------------------------------------------
 %     TOSSIT Configuration + Bathymetry
@@ -82,7 +82,7 @@ config.NOISE_FILE = 'data/noise/sbcex22_noise.hdf5';
 config.ZS_RANGE = [60 60]; % [m]
 config.DELTA_ZS = 1; % [m]
 % number of locations to sample
-config.N_LOCS = 5000; % []
+config.N_LOCS = 10; % []
 
 
 %---------------------------------------------
