@@ -586,7 +586,8 @@ for i_cb = 1:L_cb
                 data.total_call_count = sub2ind([L_zs L_locs L_H L_c_sed L_cb],i_zs,i_loc,i_H,i_c_sed,i_cb);
                 
                 % sum modes
-                p_f = squeeze(sum(p_m_f,2));
+                p_f = sum(p_m_f,2);
+                p_f = reshape(p_f,[size(p_f,1) size(p_f,[3 4])]); % squeeze(sum(p_m_f,2));
 
                 % aggregate labels
                 labels = [cb_labels
