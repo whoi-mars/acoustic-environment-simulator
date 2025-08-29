@@ -45,7 +45,7 @@ config.LOC_SAVE_CHUNK = 1;
 %     TOSSIT Configuration + Bathymetry
 %---------------------------------------------
 % TOSSIT positions
-config.TOSSIT_LATLONS_RAW = get_TOSSIT_latlons('mudpatch'); % [lat lon]
+config.TOSSIT_LATLONS_RAW = [40.46, -70.5663]; % get_TOSSIT_latlons('mudpatch'); % [lat lon]
 % minimum acceptable source water depth
 config.MIN_WATER_DEPTH = 10; % [m]
 % rectangular region of environment to consider
@@ -66,7 +66,7 @@ config.DF = 1/6; % [Hz]
 % sample rate
 config.FS = 600; % [Hz]
 % number of modes
-config.NM = 12; % []
+config.NM = 5; % []
 % signal-to-noise ratio range
 config.SNR_RANGE = [-5 5];
 % number of experimental noise examples to load
