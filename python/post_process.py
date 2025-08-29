@@ -5,9 +5,10 @@ import h5py
 import json
 import numpy as np
 from utils.split import train_test_split_inds
+from utils.transforms import trim_dc
 
 ##########################################################################
-#                        CREATE VIRTUAL DATASET                          #
+#                             GET H5 FILES                               #
 ##########################################################################
 
 # where the data has been saved
@@ -20,6 +21,24 @@ config_keys = [k.lower() for k in config.keys()]
 
 # get .h5 files in data directory
 files = glob.glob(sys.argv[1] + '/*.h5')
+
+##########################################################################
+#                      CLEAN UP DISPERSION CURVES                        #
+##########################################################################
+
+for filename in files:
+    with h5py.File(filename, 'r+') as f:
+        disp_curves = f["disp_curves"][:]
+
+        # trim dispersion curves near the f_c and shift to t = 0
+        disp_curves_trimmed = trim_dc(disp_curves, axis=2)
+        disp_curves_trimmed -= np.nanmin(disp_curves_trimmed, axis=2, keepdims=True)
+        
+        f.create_dataset("disp_curves_trimmed", data=disp_curves_trimmed)
+
+##########################################################################
+#                        CREATE VIRTUAL DATASET                          #
+##########################################################################
 
 # get keys in each data file by peaking at one
 with h5py.File(files[0], "r") as f:
