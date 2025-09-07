@@ -41,6 +41,8 @@ config.DR = 0.5; % [km]
 % number of locations to save in a file (make sure saving more than one
 % signal per file)
 config.LOC_SAVE_CHUNK = 10;
+% signal shift flag
+config.RANDOM_SIGNAL_SHIFT = false;
 
 %---------------------------------------------
 %     TOSSIT Configuration + Bathymetry

@@ -646,11 +646,13 @@ for i_cb = 1:L_cb
                 end
 
                 % randomly shift signals within simulated window
-                durations = t_far - t_close; % [s]
-                for call = 1:call_num-1
-                    for t = 1:num_TOSSITs
-                        delta_t = randi(round((config.FS/config.DF) - durations(t,call)));
-                        p_f(:,t,call) = p_f(:,t,call).*exp(2*1i*freq_sig*delta_t).';
+                if config.RANDOM_SIGNAL_SHIFT
+                    durations = t_far - t_close; % [s]
+                    for call = 1:call_num-1
+                        for t = 1:num_TOSSITs
+                            delta_t = randi(round((config.FS/config.DF) - durations(t,call)));
+                            p_f(:,t,call) = p_f(:,t,call).*exp(2*1i*freq_sig*delta_t).';
+                        end
                     end
                 end
 
