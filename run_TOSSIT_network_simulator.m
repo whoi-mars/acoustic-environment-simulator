@@ -11,7 +11,6 @@ clc
 % add relevant paths
 addpath("KRAKEN");
 addpath("simulators");
-addpath("data");
 addpath("utils");
 
 % set RNG
@@ -57,7 +56,7 @@ config.ENV_BOUNDS = [40.55 -70.67
                      40.4 -70.46
                      40.55 -70.46]; % [UL; LL; LR; UR]
 % path to bathymetry file
-config.BATH_FILE = 'data/bathymetry/MudpatchDEM70.mat';
+config.BATH_FILE = '/media/mark/extradrive2/uncertain_inversion/environmental_data/bathymetry/MudpatchDEM70.mat';
 
 %---------------------------------------------
 %               Signal Parameters
@@ -75,7 +74,7 @@ config.SNR_RANGE = [-5 5];
 % number of experimental noise examples to load
 config.NUM_NOISE = 5; % []
 % path to noise data
-config.NOISE_FILE = 'data/noise/sbcex22_noise.h5';
+config.NOISE_FILE = '/media/mark/extradrive2/uncertain_inversion/environmental_data/noise/sbcex22_noise.h5';
 
 %---------------------------------------------
 %               Source Parameters
@@ -99,7 +98,7 @@ config.LOC_DILATION = 2; % []
 % path to CTD data
 config.CONST_SSP = true;
 config.CONST_SSP_VAL = 1500;  
-config.CTD_PATH = 'data/ctd';
+config.CTD_PATH = '/media/mark/extradrive2/uncertain_inversion/environmental_data/ctd';
 % depth vector spacing for SSP
 config.DZ = 1; % [m]
 % explained variance threshold
