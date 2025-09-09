@@ -31,7 +31,7 @@ config.ADD_NOISE = false;
 % save flag
 config.SAVE = true;
 % directory to save data to (THIS PATH MUST BE ABSOLUTE)
-config.SAVE_DATA_DIR = 'C:/Users/goldw/Desktop/acoustic-environment-simulator/data/sim_data';
+config.SAVE_DATA_DIR = '/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data';
 % number of parallel proesses
 config.N = 2;
 % frequency value to approximate vg as f --> infinity
@@ -75,7 +75,7 @@ config.SNR_RANGE = [-5 5];
 % number of experimental noise examples to load
 config.NUM_NOISE = 5; % []
 % path to noise data
-config.NOISE_FILE = 'data/noise/sbcex22_noise.hdf5';
+config.NOISE_FILE = 'data/noise/sbcex22_noise.h5';
 
 %---------------------------------------------
 %               Source Parameters
@@ -126,7 +126,7 @@ config.ALPHA_B_RANGE = [0.25 0.25]; % [dB/lambda]
 % whether or not to post process data files
 config.POST_PROCESS = false;
 % python path
-config.PYENV_PATH = "C:\Users\goldw\anaconda3\envs\torch_env\python.exe";
+config.PYENV_PATH = "/home/mark/anaconda3/envs/torch_env/bin/python";
 % dataset split
 config.TRAIN_VAL_TEST_SPLIT = [0.8 0.1 0.1];
 
