@@ -39,7 +39,7 @@ config.FREQ_ASYM = 300;
 config.DR = 0.5; % [km]
 % number of locations to save in a file (make sure saving more than one
 % signal per file)
-config.LOC_SAVE_CHUNK = 10;
+config.LOC_SAVE_CHUNK = 100;
 % signal shift flag
 config.RANDOM_SIGNAL_SHIFT = false;
 
@@ -83,7 +83,7 @@ config.NOISE_FILE = '/media/mark/extradrive2/uncertain_inversion/environmental_d
 config.ZS_RANGE = [60 60]; % [m]
 config.DELTA_ZS = 1; % [m]
 % number of locations to sample
-config.N_LOCS = 30; % []
+config.N_LOCS = 5000; % []
 
 
 %---------------------------------------------
