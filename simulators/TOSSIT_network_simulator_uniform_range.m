@@ -218,12 +218,12 @@ prog_q = parallel.pool.DataQueue;
 afterEach(prog_q, @(prog_info) updateProgress(prog_info));
 
 % start parallel pool
-% p = parpool(config.N);
+p = parpool(config.N);
 
 %----------------------------------
 %       Parameter Loops
 %----------------------------------
-for i_cb = 1:L_cb
+parfor i_cb = 1:L_cb
 
     % get current cb value
     curr_cb = cb_vec(i_cb); % [m/s]
@@ -241,9 +241,10 @@ for i_cb = 1:L_cb
             % sample/calculate remaining parameters
             if config.CONST_SSP
                 c_w = config.CONST_SSP_VAL;
-                full_depth_vec = 0;
+                full_depth_vec_final = 0;
             else
                 [c_w, lambda] = kle.sample(1,config.ALPHA_V,'coeffs',true);
+                full_depth_vec_final = full_depth_vec;
             end
             rho_sed = hamilton(curr_c_sed); % [g/cm^3]
             rho_b = hamilton(curr_cb); % [g/cm^3]
@@ -276,7 +277,7 @@ for i_cb = 1:L_cb
                 rd = [config.BATHYM_ROUND, curr_D + curr_H]; % [m]
                 
                 % get the medium information and SSP
-                [b,ssp] = make_b_and_ssp(curr_D,curr_H,c_w,curr_c_sed,rho_w,rho_sed,full_depth_vec,alpha_sed);
+                [b,ssp] = make_b_and_ssp(curr_D,curr_H,c_w,curr_c_sed,rho_w,rho_sed,full_depth_vec_final,alpha_sed);
 
                 % number of layers
                 nl = size(b,1);

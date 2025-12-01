@@ -30,7 +30,7 @@ config.ADD_NOISE = true;
 % save flag
 config.SAVE = true;
 % directory to save data to (THIS PATH MUST BE ABSOLUTE)
-config.SAVE_DATA_DIR = '/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data';;
+config.SAVE_DATA_DIR = 'data/sim_data';
 % number of parallel proesses
 config.N = 2;
 % frequency value to approximate vg as f --> infinity
@@ -55,7 +55,8 @@ config.R_max = 15; % [km]
 % minimum radius of source distribution
 config.R_min = 1; % [km]
 % path to bathymetry file
-config.BATH_FILE = '/media/mark/extradrive2/uncertain_inversion/environmental_data/bathymetry/MudpatchDEM70.mat';
+config.BATH_FILE = 'data/bathymetry/MudpatchDEM70.mat';
+
 %---------------------------------------------
 %               Signal Parameters
 %---------------------------------------------
@@ -72,7 +73,7 @@ config.SNR_RANGE = [-10 5];
 % number of experimental noise examples to load
 config.NUM_NOISE = 50; % []
 % path to noise data
-config.NOISE_FILE = '/media/mark/extradrive2/uncertain_inversion/environmental_data/noise/sbcex22_noise.h5';
+config.NOISE_FILE = 'data/noise/sbcex22_noise.hdf5';
 
 %---------------------------------------------
 %               Source Parameters
@@ -94,7 +95,7 @@ config.BATHYM_ROUND = 0.5; % []
 % path to CTD data
 config.CONST_SSP = false;
 config.CONST_SSP_VAL = 1500;  
-config.CTD_PATH = '/media/mark/extradrive2/uncertain_inversion/environmental_data/ctd';
+config.CTD_PATH = 'data/ctd';
 % depth vector spacing for SSP
 config.DZ = 1; % [m]
 % explained variance threshold
