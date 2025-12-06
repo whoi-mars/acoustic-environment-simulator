@@ -13,8 +13,10 @@ function parsave_TOSSIT_network(path,p_f,t_far,t_close,labels,disp_curves,fs,df,
     % df:          discrete step used to sample frequency
     % i_loc:       index of sampled source location
 
+    [~, name, ~] = fileparts(tempname);
+
     % construct save file path
-    file_path = strcat(path,'/data_',string(i_loc),'_',string(now),'.h5');
+    file_path = strcat(path,'/data_',string(i_loc),'_',name,'.h5');
 
     % create hdf5 file
     h5create(file_path,"/p_f_re",size(p_f),'Datatype','single','Chunksize',[size(p_f,[1 2]) 1]);
