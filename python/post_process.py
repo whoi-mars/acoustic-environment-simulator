@@ -3,9 +3,9 @@ import os
 import glob
 import h5py
 import json
+from tqdm import tqdm
 import numpy as np
 from utils.split import train_test_split_inds
-from utils.transforms import trim_dc
 
 ##########################################################################
 #                             GET H5 FILES                               #
@@ -21,24 +21,6 @@ config_keys = [k.lower() for k in config.keys()]
 
 # get .h5 files in data directory
 files = glob.glob(sys.argv[1] + '/*.h5')
-
-##########################################################################
-#                      CLEAN UP DISPERSION CURVES                        #
-##########################################################################
-
-for filename in files:
-    with h5py.File(filename, 'r+') as f:
-        disp_curves = f["disp_curves"][:]
-
-        # trim dispersion curves near the f_c and shift to t = 0
-        disp_curves_trimmed = trim_dc(disp_curves, axis=2)
-        disp_curves_trimmed -= np.nanmin(disp_curves_trimmed, axis=2, keepdims=True)
-        
-        f.create_dataset("disp_curves_trimmed", data=disp_curves_trimmed)
-
-##########################################################################
-#                        CREATE VIRTUAL DATASET                          #
-##########################################################################
 
 # get keys in each data file by peaking at one
 with h5py.File(files[0], "r") as f:
@@ -59,7 +41,7 @@ shape_dict = {} # store data shape for each key
 dtype_dict = {} # store data type for each key
 total_length = 0 # keep track of dataset length
 
-for i, filename in enumerate(files, start=1):
+for i, filename in enumerate(tqdm(files), start=1):
     with h5py.File(filename, 'r') as f:
         for k in entry_keys:
 
@@ -75,9 +57,9 @@ for i, filename in enumerate(files, start=1):
             else:
                 vsource = h5py.VirtualSource(f[k])
                 sources_dict[k].append(vsource)
-        
+
         # add to total dataset length
-        total_length += f[data_keys[0]].shape[0]
+        total_length += f['p_f_re'].shape[0]
 
 # make layouts
 layout_dict = {}
