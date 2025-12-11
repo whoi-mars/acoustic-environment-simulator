@@ -34,11 +34,11 @@ config.NM = 12; % []
 %           Simulation Metaparameters
 %---------------------------------------------
 % adding noise to the calls
-config.ADD_NOISE = 5;
+config.ADD_NOISE = 100;
 % number of environments to save per file
 config.ENV_CHUNK = 1;
 % number of processe in parallel pool
-config.N = 2;
+config.N = 12;
 % frequency used to find asymptotic group speed
 config.F_ASYM = 400; % [Hz]
 % If not 0, removed all simulated signals of shorter duration
@@ -70,7 +70,7 @@ config.DELTA_H = 1; % [m]
 %---------------------------------------------
 %      Basement Sound Speed + Attenuation
 %---------------------------------------------
-config.CB_RANGE = [1600 2000]; % [m/s]
+config.CB_RANGE = [1600 2200]; % [m/s]
 config.DELTA_CB = 40; % [m/s]
 config.B_ALPHA_RANGE = [0.25 0.25]; % [db/wavelength]
 
@@ -94,8 +94,8 @@ config.DELTA_R = 100; % [m]
 %---------------------------------------------
 %                    Paths
 %---------------------------------------------
-config.NOISE_PATH = "data/noise/sbcex22_noise.hdf5";
-config.DATA_PATH = "data/sim_data";
+config.NOISE_PATH = '/media/mark/extradrive2/uncertain_inversion/environmental_data/noise/sbcex22_noise.h5';
+config.DATA_PATH = '/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data';
 
 %------------------------------------------------------------------------
 %========================================================================
