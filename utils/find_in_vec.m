@@ -16,8 +16,8 @@ function [inds] = find_in_vec(x,nums,varargin)
     parser = inputParser;
     addRequired(parser,'x',@isvector);
     addRequired(parser,'nums',@isvector);
-    checkPosScalar = @(x) isscalar && x >= 0;
-    addParameter(parser,'thresh',1e-3,checkPosScalar);
+    checkPosScalar = @(z) isscalar(z) && z >= 0;
+    addParameter(parser,'thresh',1e-3);
     parse(parser,x,nums,varargin{:});
 
     % unpack inputs
