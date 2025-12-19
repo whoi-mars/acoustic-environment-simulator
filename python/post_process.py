@@ -8,6 +8,13 @@ import numpy as np
 from utils.split import train_test_split_inds
 
 ##########################################################################
+#                            CONFIGURATION                               #
+##########################################################################
+
+# saved data that is constant for every signal
+constants = ["fs", "df"]
+
+##########################################################################
 #                             GET H5 FILES                               #
 ##########################################################################
 
@@ -15,9 +22,9 @@ from utils.split import train_test_split_inds
 data_dir = sys.argv[1]
 
 # load config file JSON and get lower case keys
-with open(os.path.join(data_dir, 'config.json'), 'r') as f:
-    config = json.load(f)
-config_keys = [k.lower() for k in config.keys()]
+# with open(os.path.join(data_dir, 'config.json'), 'r') as f:
+#     config = json.load(f)
+# config_keys = [k.lower() for k in config.keys()]
 
 # get .h5 files in data directory
 files = glob.glob(sys.argv[1] + '/*.h5')
@@ -28,13 +35,13 @@ with h5py.File(files[0], "r") as f:
 
 # determine which keys are config variables because
 # these are constant and only need one virtual source
-stored_config_keys = []
-data_keys = []
-for k in entry_keys:
-    if k.lower() in config_keys:
-        stored_config_keys.append(k)
-    else:
-        data_keys.append(k)
+# stored_config_keys = []
+# data_keys = []
+# for k in entry_keys:
+#     if k.lower() in config_keys:
+#         stored_config_keys.append(k)
+#     else:
+#         data_keys.append(k)
 
 sources_dict = {k : [] for k in entry_keys} # store virtual sources for each key
 shape_dict = {} # store data shape for each key
@@ -50,9 +57,9 @@ for i, filename in enumerate(tqdm(files), start=1):
                 shape_dict[k] = f[k].shape[1:]
                 dtype_dict[k] = f[k].dtype
 
-            # only add one osurce for keys that are also in the config
+            # only add one source for keys that are also in the config
             # because they are assumed constant
-            if k in stored_config_keys and i > 1:
+            if k in constants and i > 1:
                 continue
             else:
                 vsource = h5py.VirtualSource(f[k])
@@ -64,10 +71,10 @@ for i, filename in enumerate(tqdm(files), start=1):
 # make layouts
 layout_dict = {}
 for k in entry_keys:
-    if k in data_keys:
-        layout_dict[k] = h5py.VirtualLayout(shape=(total_length,)+shape_dict[k], dtype=dtype_dict[k])
-    else:
+    if k in constants:
         layout_dict[k] = h5py.VirtualLayout(shape=(1,)+shape_dict[k], dtype=dtype_dict[k])
+    else:
+        layout_dict[k] = h5py.VirtualLayout(shape=(total_length,)+shape_dict[k], dtype=dtype_dict[k])
 
 # fill layouts
 for k in entry_keys:
