@@ -34,7 +34,7 @@ config.NM = 12; % []
 %           Simulation Metaparameters
 %---------------------------------------------
 % adding noise to the calls
-config.ADD_NOISE = 100;
+config.ADD_NOISE = 0;
 % number of environments to save per file
 config.ENV_CHUNK = 1;
 % number of processe in parallel pool
@@ -46,12 +46,12 @@ config.DURATION_FILTER = 0; % [sec]
 % noise is added to each simulated signal
 config.SNR_RANGE = [-7 3]; % [dB]
 % randomly shift simulated signal in simulation window
-config.RANDOM_SHIFT = 1;
+config.RANDOM_SHIFT = 0;
 
 %---------------------------------------------
 %          Water Column Sound Speed
 %---------------------------------------------
-config.CW_RANGE = [1478, 1498]; % [m/s]
+config.CW_RANGE = [1489, 1489]; % [m/s]
 config.CW_NODE_DEPTHS = [20 40]; % [m]
 
 %---------------------------------------------

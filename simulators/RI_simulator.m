@@ -338,7 +338,7 @@ parfor i_cb = 1:L_cb
             if config.RANDOM_SHIFT
                 durations = t_max - t_min;
                 for i = 1:size(p_f,2)
-                    p_f(:,i) = circshift(p_f(:,i),randi(ceil(T*fs - durations(i)*fs)),1);
+                    p_f(:,i) = p_f(:,i).*exp(2*1i*pi*freq_sig.*randi(ceil(T*fs - durations(i)*fs))).';
                 end
             end
 
