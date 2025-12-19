@@ -28,7 +28,7 @@ if config.ADD_NOISE
     fprintf("Done!\n");
 else
     % required for parfor
-    noise_from_data = [];
+    noise = [];
 end
 
 %------------------------------------------------------------------------

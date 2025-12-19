@@ -51,45 +51,45 @@ config.RANDOM_SHIFT = 0;
 %---------------------------------------------
 %          Water Column Sound Speed
 %---------------------------------------------
-config.CW_RANGE = [1489, 1489]; % [m/s]
+config.CW_RANGE = [1495, 1495]; % [m/s]
 config.CW_NODE_DEPTHS = [20 40]; % [m]
 
 %---------------------------------------------
 %     Sediment Sound Speed + Attenuation
 %---------------------------------------------
-config.CSED_RANGE = [1400 1600]; % [m/s]
-config.DELTA_CSED = 15; % [m/s]
+config.CSED_RANGE = [1489 1489]; % [m/s]
+config.DELTA_CSED = 1; % [m/s]
 config.SED_ALPHA_RANGE = [0.05 0.05]; % [dB/wavelength]
 
 %---------------------------------------------
 %             Sediment Thickness
 %---------------------------------------------
-config.H_RANGE = [5 15]; % [m]
+config.H_RANGE = [9 9]; % [m]
 config.DELTA_H = 1; % [m]
 
 %---------------------------------------------
 %      Basement Sound Speed + Attenuation
 %---------------------------------------------
-config.CB_RANGE = [1600 2200]; % [m/s]
-config.DELTA_CB = 40; % [m/s]
+config.CB_RANGE = [1849 1849]; % [m/s]
+config.DELTA_CB = 1; % [m/s]
 config.B_ALPHA_RANGE = [0.25 0.25]; % [db/wavelength]
 
 %---------------------------------------------
 %            Water Column Depth
 %---------------------------------------------
-config.D_RANGE = [68 78]; % [m]
+config.D_RANGE = [70 70]; % [m]
 
 %---------------------------------------------
 %              Source Depths
 %---------------------------------------------
-config.ZS_RANGE = [58 62]; % [m]
+config.ZS_RANGE = [60 60]; % [m]
 config.DELTA_ZS = 1; % [m]
 
 %---------------------------------------------
 %              Source Ranges
 %---------------------------------------------
 config.R_RANGE = [4000 15000]; % [m]
-config.DELTA_R = 100; % [m]
+config.DELTA_R = 10; % [m]
 
 %---------------------------------------------
 %                    Paths
