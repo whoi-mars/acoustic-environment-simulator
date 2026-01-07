@@ -106,10 +106,10 @@ prog_q = parallel.pool.DataQueue;
 afterEach(prog_q,@(prog_info) updateProgress(prog_info));
 
 % start parallel pool
-p = parpool(config.N);
+% p = parpool(config.N);
 
 tic
-parfor i_cb = 1:L_cb
+for i_cb = 1:L_cb
     % grab current cb value
     curr_cb = cb_vec(i_cb); % [m/s]
     for i_csed = 1:L_csed
@@ -222,6 +222,7 @@ parfor i_cb = 1:L_cb
             zr_idx = find(zm == zr); % []
             % store signals
             p_m_f = zeros(nfft,config.NM,per_env_sims);
+            vg_m_f = zeros(nfft,config.NM,per_env_sims);
             for i_r = 1:L_r
                 % get current range
                 curr_r = r_vec(i_r); % [m]
@@ -256,6 +257,9 @@ parfor i_cb = 1:L_cb
                     vg_krak_curr(vg_krak_curr == 0) = NaN;
                     t_min(call_num) = curr_r / vg_krak_asym;
                     t_max(call_num) = curr_r / min(vg_krak_curr,[],"all");
+
+                    % save group velocities
+                    vg_m_f(ind_f(1):ind_f(end),:,call_num) = vg_krak_curr;
 
                     % skip if call doesn't fit into window
                     if t_max(call_num) - t_min(call_num) > T
@@ -305,6 +309,7 @@ parfor i_cb = 1:L_cb
 
             % trim storage vectors to simulated calls
             p_f = p_f(:,1:call_num-1);
+            vg_m_f = vg_m_f(:,:,1:call_num-1);
             t_min = t_min(1:call_num-1);
             t_max = t_max(1:call_num-1);
             labels = labels(:,1:call_num-1);
@@ -346,6 +351,7 @@ parfor i_cb = 1:L_cb
             data.t_far = t_max;
             data.t_close = t_min;
             data.p_f = p_f;
+            data.vg_m_f = vg_m_f;
             data.labels = labels;
             data.fs = fs;
             data.df = config.DF;
@@ -364,7 +370,7 @@ parfor i_cb = 1:L_cb
             end 
 
             if config.SAVE_RESULTS
-                update(data,config.DATA_PATH,config.ENV_CHUNK,per_env_sims,nfft,total_sims);
+                update(data,config.DATA_PATH,config.ENV_CHUNK,per_env_sims,config.NM,nfft,total_sims);
             end
         end
     end
@@ -398,7 +404,7 @@ function updateProgress(prog_info)
     counter = counter + 1;
 end
 
-function update(data,path,L_CHUNK,N_SIGS,nfft,total_sims)
+function update(data,path,L_CHUNK,N_SIGS,NM,nfft,total_sims)
     % UPDATE Callback function used to save data in chunks.
     %
     % Parameters
@@ -425,7 +431,7 @@ function update(data,path,L_CHUNK,N_SIGS,nfft,total_sims)
     %              produced/attempted.
 
     % persistent variables to save
-    persistent p_f labels t_close t_far df fs;
+    persistent p_f vg_m_f labels t_close t_far df fs;
 
     % persistent counter to know when to save a file
     persistent counter;
@@ -436,6 +442,7 @@ function update(data,path,L_CHUNK,N_SIGS,nfft,total_sims)
         t_far = zeros(1,(L_CHUNK+1)*N_SIGS,'single');
         t_close = zeros(1,(L_CHUNK+1)*N_SIGS,'single');
         p_f = zeros(nfft,(L_CHUNK+1)*N_SIGS,'single');
+        vg_m_f = zeros(nfft,NM,(L_CHUNK+1)*N_SIGS,'single');
         labels = zeros(data.num_labels,(L_CHUNK+1)*N_SIGS,'single');
         fs = data.fs;
         df = data.df;
@@ -447,6 +454,7 @@ function update(data,path,L_CHUNK,N_SIGS,nfft,total_sims)
     t_far(:,counter:counter+data.chunk_size-1) = data.t_far;
     t_close(:,counter:counter+data.chunk_size-1) = data.t_close;
     p_f(:,counter:counter+data.chunk_size-1) = data.p_f;
+    vg_m_f(:,:,counter:counter+data.chunk_size-1) = data.vg_m_f;
     labels(:,counter:counter+data.chunk_size-1) = data.labels;
 
     % iterate counter
@@ -457,30 +465,31 @@ function update(data,path,L_CHUNK,N_SIGS,nfft,total_sims)
 
         if counter >= L_CHUNK*N_SIGS + 2
             % save full file
-            parsave_RI(path,p_f(:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df)
+            parsave_RI(path,p_f(:,1:L_CHUNK*N_SIGS),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df)
             
             % pause so timestamps are unique
             pause(10);
 
             % save remainder
-            parsave_RI(path,p_f(:,L_CHUNK*N_SIGS+1:counter-1),t_far(:,L_CHUNK*N_SIGS+1:counter-1),t_close(:,L_CHUNK*N_SIGS+1:counter-1),labels(:,L_CHUNK*N_SIGS+1:counter-1),fs,df)
+            parsave_RI(path,p_f(:,L_CHUNK*N_SIGS+1:counter-1),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,L_CHUNK*N_SIGS+1:counter-1),t_close(:,L_CHUNK*N_SIGS+1:counter-1),labels(:,L_CHUNK*N_SIGS+1:counter-1),fs,df)
         else
             % clear out remaining empty elements. there will always be extra
             % because of the extra memory initialized
             t_far(:,counter:end) = [];
             t_close(:,counter:end) = [];
             p_f(:,counter:end) = [];
+            vg_m_f(:,:,counter:end) = [];
             labels(:,counter:end) = [];
     
             % save calls
-            parsave_RI(path,p_f,t_far,t_close,labels,fs,df)
+            parsave_RI(path,p_f,vg_m_f,t_far,t_close,labels,fs,df)
         end
         return;
     elseif counter >= L_CHUNK*N_SIGS + 1
         % if we've filled the persistent variables, we save now
 
         % save calls
-        parsave_RI(path,p_f(:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df)
+        parsave_RI(path,p_f(:,1:L_CHUNK*N_SIGS),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df)
             
         % reset persistent variables, carrying over extra signals that did
         % not fit in the save chunk if they exist
@@ -492,6 +501,7 @@ function update(data,path,L_CHUNK,N_SIGS,nfft,total_sims)
             t_far(:) = 0;
             t_close(:) = 0;
             p_f(:) = 0;
+            vg_m_f(:) = 0;
             labels(:) = 0;
 
             % reset counter
@@ -503,6 +513,8 @@ function update(data,path,L_CHUNK,N_SIGS,nfft,total_sims)
             t_close(:,mod_res+1:end) = 0;
             p_f(:,1:mod_res) = p_f(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
             p_f(:, mod_res+1:end) = 0;
+            vg_m_f(:,1:mod_res) = vg_m_f(:,:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            vg_m_f(:,:,mod_res+1:end) = 0;
             labels(:,1:mod_res) = labels(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
             labels(:,mod_res+1:end) = 0;
 

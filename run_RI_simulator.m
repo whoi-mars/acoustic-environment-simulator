@@ -28,7 +28,7 @@ config.SAVE_RESULTS = 1;
 % frequency range
 config.FREQ_RANGE = [20 300]; % [Hz]
 config.DF = 1/6; % [Hz]
-config.NM = 12; % []
+config.NM = 8; % []
 
 %---------------------------------------------
 %           Simulation Metaparameters
@@ -57,8 +57,8 @@ config.CW_NODE_DEPTHS = [20 40]; % [m]
 %---------------------------------------------
 %     Sediment Sound Speed + Attenuation
 %---------------------------------------------
-config.CSED_RANGE = [1400 1600]; % [m/s]
-config.DELTA_CSED = 15; % [m/s]
+config.CSED_RANGE = [1486 1486]; % [m/s]
+config.DELTA_CSED = 1; % [m/s]
 config.SED_ALPHA_RANGE = [0.05 0.05]; % [dB/wavelength]
 
 %---------------------------------------------
@@ -82,7 +82,7 @@ config.D_RANGE = [70 70]; % [m]
 %---------------------------------------------
 %              Source Depths
 %---------------------------------------------
-config.ZS_RANGE = [45 60]; % [m]
+config.ZS_RANGE = [60 60]; % [m]
 config.DELTA_ZS = 1; % [m]
 
 %---------------------------------------------
@@ -94,8 +94,8 @@ config.DELTA_R = 10; % [m]
 %---------------------------------------------
 %                    Paths
 %---------------------------------------------
-config.NOISE_PATH = '/media/mark/extradrive2/uncertain_inversion/environmental_data/noise/sbcex22_noise.h5';
-config.DATA_PATH = '/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data';
+config.NOISE_PATH = 'data/noise'; % '/media/mark/extradrive2/uncertain_inversion/environmental_data/noise/sbcex22_noise.h5';
+config.DATA_PATH = 'data/sim_data'; % '/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data';
 
 %------------------------------------------------------------------------
 %========================================================================
