@@ -259,7 +259,7 @@ for i_cb = 1:L_cb
                     t_max(call_num) = curr_r / min(vg_krak_curr,[],"all");
 
                     % save group velocities
-                    vg_m_f(ind_f(1):ind_f(end),:,call_num) = vg_krak_curr;
+                    vg_m_f(ind_f(1):ind_f(end),:,call_num) = curr_r ./ vg_krak_curr;
 
                     % skip if call doesn't fit into window
                     if t_max(call_num) - t_min(call_num) > T
