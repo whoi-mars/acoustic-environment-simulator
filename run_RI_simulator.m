@@ -51,14 +51,14 @@ config.RANDOM_SHIFT = 0;
 %---------------------------------------------
 %          Water Column Sound Speed
 %---------------------------------------------
-config.CW_RANGE = [1495, 1495]; % [m/s]
+config.CW_RANGE = [1478, 1497]; % [m/s]
 config.CW_NODE_DEPTHS = [20 40]; % [m]
 
 %---------------------------------------------
 %     Sediment Sound Speed + Attenuation
 %---------------------------------------------
-config.CSED_RANGE = [1489 1489]; % [m/s]
-config.DELTA_CSED = 1; % [m/s]
+config.CSED_RANGE = [1400 1600]; % [m/s]
+config.DELTA_CSED = 15; % [m/s]
 config.SED_ALPHA_RANGE = [0.05 0.05]; % [dB/wavelength]
 
 %---------------------------------------------
@@ -82,7 +82,7 @@ config.D_RANGE = [70 70]; % [m]
 %---------------------------------------------
 %              Source Depths
 %---------------------------------------------
-config.ZS_RANGE = [60 60]; % [m]
+config.ZS_RANGE = [45 60]; % [m]
 config.DELTA_ZS = 1; % [m]
 
 %---------------------------------------------
