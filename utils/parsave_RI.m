@@ -19,7 +19,7 @@ function parsave_RI(path,p_f,vg_m_f,t_far,t_close,labels,fs,df)
     % create hdf5 file
     h5create(file_path,"/p_f_re",size(p_f),'Datatype','single','Chunksize',[size(p_f,1) 1]);
     h5create(file_path,"/p_f_im",size(p_f),'Datatype','single','Chunksize',[size(p_f,1) 1]);
-    h5create(file_path,"/vg_m_f",size(vg_m_f),'Datatype','single','Chunksize',[size(vg_m_f,[1 2]) 1])
+    % h5create(file_path,"/vg_m_f",size(vg_m_f),'Datatype','single','Chunksize',[size(vg_m_f,[1 2]) 1])
     h5create(file_path,"/t_far",size(t_far),'Datatype','single','Chunksize',[size(t_far,1) 1]);    
     h5create(file_path,"/t_close",size(t_close),'Datatype','single','Chunksize',[size(t_close,1) 1]);
     h5create(file_path,"/labels",size(labels),'Datatype','single','Chunksize',[size(labels,1) 1]);
@@ -29,7 +29,7 @@ function parsave_RI(path,p_f,vg_m_f,t_far,t_close,labels,fs,df)
     % write data
     h5write(file_path,"/p_f_re",real(p_f));
     h5write(file_path,"/p_f_im",imag(p_f));
-    h5write(file_path,"/vg_m_f",vg_m_f);
+    % h5write(file_path,"/vg_m_f",vg_m_f);
     h5write(file_path,"/t_far",t_far);
     h5write(file_path,"/t_close",t_close);
     h5write(file_path,"/labels",labels);

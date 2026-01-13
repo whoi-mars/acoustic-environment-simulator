@@ -106,10 +106,10 @@ prog_q = parallel.pool.DataQueue;
 afterEach(prog_q,@(prog_info) updateProgress(prog_info));
 
 % start parallel pool
-% p = parpool(config.N);
+p = parpool(config.N);
 
 tic
-for i_cb = 1:L_cb
+parfor i_cb = 1:L_cb
     % grab current cb value
     curr_cb = cb_vec(i_cb); % [m/s]
     for i_csed = 1:L_csed
