@@ -51,7 +51,7 @@ config.RANDOM_SHIFT = 0;
 %---------------------------------------------
 %          Water Column Sound Speed
 %---------------------------------------------
-config.CW_RANGE = [1478, 1497]; % [m/s]
+config.CW_RANGE = [1478, 1498]; % [m/s]
 config.CW_NODE_DEPTHS = [20 40]; % [m]
 
 %---------------------------------------------
@@ -70,8 +70,8 @@ config.DELTA_H = 1; % [m]
 %---------------------------------------------
 %      Basement Sound Speed + Attenuation
 %---------------------------------------------
-config.CB_RANGE = [1849 1849]; % [m/s]
-config.DELTA_CB = 1; % [m/s]
+config.CB_RANGE = [1600 2200]; % [m/s]
+config.DELTA_CB = 40; % [m/s]
 config.B_ALPHA_RANGE = [0.25 0.25]; % [db/wavelength]
 
 %---------------------------------------------
@@ -82,7 +82,7 @@ config.D_RANGE = [68 78]; % [m]
 %---------------------------------------------
 %              Source Depths
 %---------------------------------------------
-config.ZS_RANGE = [45 60]; % [m]
+config.ZS_RANGE = [58 62]; % [m]
 config.DELTA_ZS = 1; % [m]
 
 %---------------------------------------------
