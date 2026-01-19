@@ -36,7 +36,7 @@ config.NM = 8; % []
 % adding noise to the calls
 config.ADD_NOISE = 0;
 % number of environments to save per file
-config.ENV_CHUNK = 1;
+config.ENV_CHUNK = 16;
 % number of processe in parallel pool
 config.N = 12;
 % frequency used to find asymptotic group speed
