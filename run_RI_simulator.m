@@ -6,6 +6,7 @@ clc
 addpath('KRAKEN');
 addpath('utils');
 addpath('simulators');
+addpath('/home/mark/Documents/MATLAB/')
 
 % set RNG
 rng(1234)
@@ -34,7 +35,7 @@ config.NM = 8; % []
 %           Simulation Metaparameters
 %---------------------------------------------
 % adding noise to the calls
-config.ADD_NOISE = 0;
+config.ADD_NOISE = 5000;
 % number of environments to save per file
 config.ENV_CHUNK = 16;
 % number of processe in parallel pool
@@ -90,12 +91,6 @@ config.DELTA_ZS = 1; % [m]
 %---------------------------------------------
 config.R_RANGE = [4000 15000]; % [m]
 config.DELTA_R = 10; % [m]
-
-%---------------------------------------------
-%                    Paths
-%---------------------------------------------
-config.NOISE_PATH = '/media/mark/extradrive2/uncertain_inversion/environmental_data/noise/sbcex22_noise.h5';
-config.DATA_PATH = '/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data';
 
 %------------------------------------------------------------------------
 %========================================================================

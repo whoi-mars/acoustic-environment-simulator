@@ -5,9 +5,21 @@
 %------------------------------------------------------------------------
 
 %------------------------
+%   Load Global Config
+%------------------------
+cg = yaml.loadFile("config_global.yaml");
+if gc.local
+    DATA_PATH = cg.local_paths.data;
+    NOISE_PATH = cg.local_paths.noise;
+else
+    DATA_PATH = cg.remote_paths.data;
+    NOISE_PATH = cg.remote_paths.noise;
+end
+
+%------------------------
 %     Save Config
 %------------------------
-struct2json(config,fullfile(config.DATA_PATH,'config.json'));
+struct2json(config,fullfile(DATA_PATH,'config.json'));
 
 %-------------------------------------
 %         Constant Parameters
@@ -24,7 +36,7 @@ find_tolerance = 1e-6; % []
 %-------------------------------------
 if config.ADD_NOISE
     fprintf('Loading Noise Examples...');
-    noise = load_experimental_noise(config.NOISE_PATH, fs, config.ADD_NOISE, T);
+    noise = load_experimental_noise(NOISE_PATH, fs, config.ADD_NOISE, T);
     fprintf("Done!\n");
 else
     % required for parfor
@@ -98,7 +110,7 @@ ind_f = min_ind_f:max_ind_f;
 %----------------------------------
 if config.SAVE_RESULTS
     q = parallel.pool.DataQueue;
-    afterEach(q,@(data) update(data,config.DATA_PATH,config.ENV_CHUNK,per_env_sims,config.NM,nfft,total_sims));
+    afterEach(q,@(data) update(data,DATA_PATH,config.ENV_CHUNK,per_env_sims,config.NM,nfft,total_sims));
 end
 
 % queue for displaying progress
@@ -370,7 +382,7 @@ parfor i_cb = 1:L_cb
             end 
 
             if config.SAVE_RESULTS
-                % update(data,config.DATA_PATH,config.ENV_CHUNK,per_env_sims,config.NM,nfft,total_sims);
+                % update(data,DATA_PATH,config.ENV_CHUNK,per_env_sims,config.NM,nfft,total_sims);
                 send(q,data);
             end
         end
