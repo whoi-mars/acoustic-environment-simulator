@@ -3,14 +3,17 @@ import glob
 import numpy as np
 import h5py
 import zarr
-
+import yaml
+from utils.split import train_test_split_inds
 
 def convert_hdf5_shards_to_zarr(
     h5_glob_pattern: str,
     out_zarr_path: str,
+    out_stats_path: str,
     keys=("p_f_re", "p_f_im", "labels"),
     chunk_samples: int = 32,
     overwrite: bool = False,
+    tts=(0.8, 0.1, 0.1),
 ):
     """
     Convert multiple HDF5 shard files into a single Zarr store, streaming along axis 0.
@@ -108,11 +111,33 @@ def convert_hdf5_shards_to_zarr(
 
     print(f"Done. Zarr written to: {out_zarr_path}")
 
+    ##########################################################################
+    #                GENERATE TRAIN/VAL/TEST SPLIT INDICES                   #
+    ##########################################################################
+
+    # get split percentages
+    train_split, val_split, test_split = tts[0], tts[1], tts[2]
+
+    # get split indices
+    train_inds, val_inds, test_inds = train_test_split_inds(np.arange(total_n), train_size=train_split, test_size=test_split, val_size=val_split)
+
+    # save indices
+    np.savez(out_stats_path,
+            train_inds=train_inds,
+            val_inds=val_inds,
+            test_inds=test_inds)
+
 if __name__ == "__main__":
+    # load global config file
+    with open("../global_config.yaml", 'r') as yaml_file:
+        global_config = yaml.load(yaml_file, Loader=yaml.Loader)
+
     convert_hdf5_shards_to_zarr(
-        h5_glob_pattern="/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data/*.h5",
-        out_zarr_path="/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data/out_dataset.zarr",
+        h5_glob_pattern=os.path.join(global_config["remote_paths"]["data"], "*.h5"), # "/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data/*.h5",
+        out_zarr_path=os.path.join(global_config["remote_paths"]["data"], "out_dataset.zarr"), # "/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data/out_dataset.zarr",
+        out_stats_path=os.path.join(global_config["remote_paths"]["data"], "split_indices.npz"), # "/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data/split_indices.npz",
         keys=("p_f_re", "p_f_im", "labels"),
         chunk_samples=32,
         overwrite=False,
+        tts=[0.8, 0.1, 0.1],
     )
