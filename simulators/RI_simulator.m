@@ -8,7 +8,7 @@
 %   Load Global Config
 %------------------------
 cg = yaml.loadFile("config_global.yaml");
-if gc.local
+if cg.local
     DATA_PATH = cg.local_paths.data;
     NOISE_PATH = cg.local_paths.noise;
 else
@@ -19,7 +19,9 @@ end
 %------------------------
 %     Save Config
 %------------------------
-struct2json(config,fullfile(DATA_PATH,'config.json'));
+if config.SAVE_RESULTS
+    struct2json(config,fullfile(DATA_PATH,'config.json'));
+end
 
 %-------------------------------------
 %         Constant Parameters
