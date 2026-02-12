@@ -45,7 +45,7 @@ config.F_ASYM = 400; % [Hz]
 % If not 0, removed all simulated signals of shorter duration
 config.DURATION_FILTER = 0; % [sec]
 % noise is added to each simulated signal
-config.SNR_RANGE = [-7 3]; % [dB]
+config.SNR_RANGE = [2 5]; % [dB]
 % randomly shift simulated signal in simulation window
 config.RANDOM_SHIFT = 0;
 
