@@ -9,6 +9,7 @@ classdef KLE
         V
         D
         sigma
+        depth_vec
     end
 
     methods
@@ -36,10 +37,12 @@ classdef KLE
             addRequired(parser,'data',@ismatrix);
             checkPosInt = @(x) isscalar(x) && x > 0;
             addParameter(parser,'sigma',2,checkPosInt);
+            addParameter(parser,'depth_vec',[]);
             parse(parser,data,varargin{:});
             
             % unpack inputs
             data = parser.Results.data;
+            obj.depth_vec = parser.Results.depth_vec;
             obj.sigma = parser.Results.sigma;
 
             % get data mean and center data
@@ -118,6 +121,29 @@ classdef KLE
             % get random coefficients used if desired
             if coeffs
                 varargout{1} = Z .* diag(D_M);
+            end
+        end
+
+        function save(obj, path)
+            % construct save file path
+            file_path = fullfile(path, "KLE.h5");
+
+            % create hdf5 file
+            h5create(file_path,"/mu",size(obj.mu));
+            h5create(file_path,"/V",size(obj.V));
+            h5create(file_path,"/D",size(obj.D));
+            h5create(file_path,"/sigma",size(obj.sigma));
+            if ~isempty(obj.depth_vec)
+                h5create(file_path,"/depth_vec",size(obj.depth_vec));
+            end
+
+            % write data
+            h5write(file_path,"/mu",obj.mu);
+            h5write(file_path,"/V",obj.V);
+            h5write(file_path,"/D",obj.D);
+            h5write(file_path,"/sigma",obj.sigma);
+            if ~isempty(obj.depth_vec)
+                h5write(file_path,"/depth_vec",obj.depth_vec);
             end
         end
     end

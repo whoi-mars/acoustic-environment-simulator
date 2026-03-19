@@ -7,6 +7,7 @@ import yaml
 from utils.split import train_test_split_inds
 
 def convert_hdf5_shards_to_zarr(
+    data_path: str,
     h5_glob_pattern: str,
     out_zarr_path: str,
     out_stats_path: str,
@@ -27,6 +28,10 @@ def convert_hdf5_shards_to_zarr(
     h5_files = sorted(glob.glob(h5_glob_pattern))
     if not h5_files:
         raise FileNotFoundError(f"No HDF5 files matched: {h5_glob_pattern}")
+    h5_files = [
+        file_path for file_path in h5_files 
+        if os.path.basename(file_path) != "KLE.h5"
+    ]
 
     # If overwrite, delete existing Zarr directory
     if overwrite and os.path.exists(out_zarr_path):
@@ -41,6 +46,14 @@ def convert_hdf5_shards_to_zarr(
     # --- Save fs (once) ---
     with h5py.File(h5_files[0], "r") as f0:
         fs = np.asarray(f0["fs"][...])
+
+    if os.path.exists(os.path.join(data_path, "KLE.h5")):
+        with h5py.File(os.path.join(data_path, "KLE.h5"), "r") as f:
+            mu = f["mu"][:]
+            V = f["V"][:]
+            D = f["D"][:]
+            sigma = f["sigma"][:]
+            depth_vec = f["depth_vec"][:]
 
     for fp in h5_files:
         with h5py.File(fp, "r") as f:
@@ -82,6 +95,38 @@ def convert_hdf5_shards_to_zarr(
                             shape=fs.shape,
                             dtype=fs.dtype,
                         )
+    
+    if os.path.exists(os.path.join(data_path, "KLE.h5")):
+        zarr_arrays["mu"] = root.create_dataset(
+                                name="mu",
+                                data=mu,
+                                shape=mu.shape,
+                                dtype=mu.dtype,
+                            )
+        zarr_arrays["V"] = root.create_dataset(
+                                name="V",
+                                data=V,
+                                shape=V.shape,
+                                dtype=V.dtype,
+                            ) 
+        zarr_arrays["D"] = root.create_dataset(
+                                name="D",
+                                data=D,
+                                shape=D.shape,
+                                dtype=D.dtype,
+                            ) 
+        zarr_arrays["sigma"] = root.create_dataset(
+                                name="sigma",
+                                data=sigma,
+                                shape=sigma.shape,
+                                dtype=sigma.dtype,
+                            )
+        zarr_arrays["depth_vec"] = root.create_dataset(
+                                name="depth_vec",
+                                data=depth_vec,
+                                shape=depth_vec.shape,
+                                dtype=depth_vec.dtype,
+                            )            
 
     for k in keys:
         dtype, tail_shape = ref_info[k]
@@ -130,12 +175,21 @@ def convert_hdf5_shards_to_zarr(
 if __name__ == "__main__":
     # load global config file
     with open("../config_global.yaml", 'r') as yaml_file:
-        global_config = yaml.load(yaml_file, Loader=yaml.Loader)
+        config_global = yaml.load(yaml_file, Loader=yaml.Loader)
+
+    # load paths
+    if config_global["local"]:
+        noise_path = config_global["local_paths"]["noise"]
+        data_path = config_global["local_paths"]["data"]
+    else:
+        noise_path = config_global["remote_paths"]["noise"]
+        data_path = config_global["remote_paths"]["data"]
 
     convert_hdf5_shards_to_zarr(
-        h5_glob_pattern=os.path.join(global_config["remote_paths"]["data"], "*.h5"),
-        out_zarr_path=os.path.join(global_config["remote_paths"]["data"], "out_dataset.zarr"),
-        out_stats_path=os.path.join(global_config["remote_paths"]["data"], "split_indices.npz"),
+        data_path=data_path,
+        h5_glob_pattern=os.path.join(data_path, "*.h5"),
+        out_zarr_path=os.path.join(data_path, "out_dataset.zarr"),
+        out_stats_path=os.path.join(data_path, "split_indices.npz"),
         keys=("p_f_re", "p_f_im", "labels"),
         chunk_samples=32,
         overwrite=False,

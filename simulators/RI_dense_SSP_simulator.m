@@ -1,10 +1,3 @@
-% DESCRIPTION
-% -----------
-% Simulates received acoustic data for a variety of source and enviornment
-% parameters in a 2D range-independent (RI) environment. The environment is
-% modeled here as a water column with a four-node SSP, a homogeneous
-% sediement layer, and a semi-infinite basement.
-
 %------------------------------------------------------------------------
 %========================================================================
 %                             Setup
@@ -51,6 +44,31 @@ else
     % required for parfor
     noise = [];
 end
+
+%-------------------------------------
+%        Load KLE SSP Sampler
+%-------------------------------------
+fprintf('Loading CTD Data...')
+    % load data
+    [CTD, full_depth_vec] = load_asc_CTD_data(fullfile(NOISE_PATH, "ctd_data"),config.DZ,'fill_top',true);
+
+    % isolate sound speed and delete rest of data
+    C_data = CTD(:,:,end);
+    clear CTD;
+
+    % convert 0s (where data was not sampled) to NaN values
+    for i=1:size(C_data,1)
+        ind = find(C_data(i,:),1,'last');
+        C_data(i,ind+1:end) = NaN;
+    end
+
+    % create KLE sampler
+    kle = KLE(C_data,'sigma',12,'depth_vec',full_depth_vec);
+
+    if config.SAVE_RESULTS
+        kle.save(DATA_PATH);
+    end
+fprintf('Done!\n')
 
 %------------------------------------------------------------------------
 %========================================================================
@@ -132,7 +150,7 @@ if config.N > 0
 end
 
 tic
-parfor i_cb = 1:L_cb
+for i_cb = 1:L_cb
     % grab current cb value
     curr_cb = cb_vec(i_cb); % [m/s]
     for i_csed = 1:L_csed
@@ -142,11 +160,13 @@ parfor i_cb = 1:L_cb
             % grab current H value
             curr_H = H_vec(i_H); % [m]
 
+            % sample SSP
+            [cw_vec, coeffs] = kle.sample(1, 0.80,'coeffs',true);
+
             % sample/calculate remaining non-concstant parameter
             % for a particular environement
             D = randi(config.D_RANGE); % [m]
             zr = D - 1; % [m]
-            cw_vec = unifrnd(config.CW_RANGE(1), config.CW_RANGE(2), 1, length(config.CW_NODE_DEPTHS)+2); % [m/s]
             rho_sed = hamilton(curr_csed); % [g/cm^3]
             rho_b = hamilton(curr_cb); % [g/cm^3]
             b_alpha = unifrnd(config.B_ALPHA_RANGE(1), config.B_ALPHA_RANGE(2)); % [dB/wavelength]
@@ -164,8 +184,7 @@ parfor i_cb = 1:L_cb
             t_max = zeros(1,per_env_sims,'single'); % [s]
             t_min = zeros(1,per_env_sims,'single'); % [s]
             cb_labels = zeros(1,per_env_sims,'single'); % [m/s]
-            cw_labels = zeros(length(config.CW_NODE_DEPTHS)+2,per_env_sims,'single'); % [m/s]
-            z_labels = zeros(length(config.CW_NODE_DEPTHS),'single'); % [m]
+            cw_coeff_labels = zeros(length(coeffs),per_env_sims,'single'); % []
             c_sed_labels = zeros(1,per_env_sims,'single'); % [m/s]
             H_labels = zeros(1,per_env_sims,'single'); % [m]
             D_labels = zeros(1,per_env_sims,'single'); % [m]
@@ -183,9 +202,9 @@ parfor i_cb = 1:L_cb
             % receiver depth range
             rd = [1 D+curr_H];
             % make environment
-            [b,ssp] = make_layered_b_and_ssp(D,curr_H,cw_vec,curr_csed,rho_w,rho_sed,config.CW_NODE_DEPTHS,sed_alpha);
+            [b,ssp] = make_b_and_ssp(D,curr_H,cw_vec,curr_csed,rho_w,rho_sed,full_depth_vec,sed_alpha);
             % get number of layers
-            nl = length(unique(ssp(:,1))) - 1;
+            nl = size(b,1);
             % number of columns in ssp object
             [nc,~] = size(ssp);
             % halfspace conditions
@@ -267,8 +286,7 @@ parfor i_cb = 1:L_cb
 
                     % store labels
                     cb_labels(call_num) = curr_cb;
-                    cw_labels(:,call_num) = cw_vec;
-                    z_labels(:,call_num) = config.CW_NODE_DEPTHS;
+                    cw_coeff_labels(:,call_num) = coeffs;
                     c_sed_labels(call_num) = curr_csed;
                     H_labels(call_num) = curr_H;
                     D_labels(call_num) = D;
@@ -322,8 +340,8 @@ parfor i_cb = 1:L_cb
 
             % aggregate labels
             labels = [cb_labels
-                      cw_labels
-                      z_labels
+                      cw_coeff_labels
+                      % z_labels
                       c_sed_labels
                       H_labels
                       D_labels
@@ -381,8 +399,7 @@ parfor i_cb = 1:L_cb
             data.T = T;
             data.chunk_size = call_num - 1;
             data.num_labels = size(cb_labels,1)...
-                              + size(cw_labels,1)...
-                              + size(z_labels,1)...
+                              + size(cw_coeff_labels,1)...
                               + size(c_sed_labels,1)...
                               + size(H_labels,1)...
                               + size(D_labels,1)...
