@@ -35,7 +35,7 @@ config.NM = 8; % []
 %           Simulation Metaparameters
 %---------------------------------------------
 % adding noise to the calls
-config.ADD_NOISE = 5000;
+config.ADD_NOISE = 10000;
 % number of environments to save per file
 config.ENV_CHUNK = 16;
 % number of processe in parallel pool
@@ -43,9 +43,9 @@ config.N = 12;
 % frequency used to find asymptotic group speed
 config.F_ASYM = 400; % [Hz]
 % If not 0, removed all simulated signals of shorter duration
-config.DURATION_FILTER = 0; % [sec]
+config.DURATION_FILTER = 0.5; % [sec]
 % noise is added to each simulated signal
-config.SNR_RANGE = [-5 5]; % [dB]
+config.SNR_RANGE = [-7 3]; % [dB]
 % randomly shift simulated signal in simulation window
 config.RANDOM_SHIFT = 1;
 
@@ -89,8 +89,8 @@ config.DELTA_ZS = 1; % [m]
 %---------------------------------------------
 %              Source Ranges
 %---------------------------------------------
-config.R_RANGE = [4000 15000]; % [m]
-config.DELTA_R = 10; % [m]
+config.R_RANGE = [6000 15000]; % [m]
+config.DELTA_R = 100; % [m]
 
 %------------------------------------------------------------------------
 %========================================================================
