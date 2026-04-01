@@ -1,10 +1,17 @@
 import sys
 import os
 import glob
+from pathlib import Path
 import h5py
 import json
 from tqdm import tqdm
 import numpy as np
+
+# Ensure imports resolve against this repo's local python/ directory first.
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
 from utils.split import train_test_split_inds
 
 ##########################################################################

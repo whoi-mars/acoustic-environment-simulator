@@ -4,16 +4,14 @@ import numpy as np
 import h5py
 import zarr
 import yaml
+
 from utils.split import train_test_split_inds
 
 def convert_hdf5_shards_to_zarr(
-    data_path: str,
-    h5_glob_pattern: str,
-    out_zarr_path: str,
-    out_stats_path: str,
+    data_path,
     keys=("p_f_re", "p_f_im", "labels"),
-    chunk_samples: int = 32,
-    overwrite: bool = False,
+    chunk_samples=32,
+    overwrite=False,
     tts=(0.8, 0.1, 0.1),
 ):
     """
@@ -25,6 +23,11 @@ def convert_hdf5_shards_to_zarr(
       - All shards share identical trailing dimensions and dtypes per key
     """
 
+    # get needed paths
+    h5_glob_pattern = os.path.join(data_path, "*.h5")
+    out_zarr_path = os.path.join(data_path, "out_dataset.zarr")
+    out_stats_path = os.path.join(data_path, "split_indices.npz")
+    
     h5_files = sorted(glob.glob(h5_glob_pattern))
     if not h5_files:
         raise FileNotFoundError(f"No HDF5 files matched: {h5_glob_pattern}")
@@ -180,16 +183,13 @@ if __name__ == "__main__":
     # load paths
     if config_global["local"]:
         noise_path = config_global["local_paths"]["noise"]
-        data_path = config_global["local_paths"]["data"]
+        data_path = os.path.join(config_global["local_paths"]["data"], "RI_layered")
     else:
         noise_path = config_global["remote_paths"]["noise"]
-        data_path = config_global["remote_paths"]["data"]
+        data_path = os.path.join(config_global["remote_paths"]["data"], "RI_layered")
 
     convert_hdf5_shards_to_zarr(
         data_path=data_path,
-        h5_glob_pattern=os.path.join(data_path, "*.h5"),
-        out_zarr_path=os.path.join(data_path, "out_dataset.zarr"),
-        out_stats_path=os.path.join(data_path, "split_indices.npz"),
         keys=("p_f_re", "p_f_im", "labels"),
         chunk_samples=32,
         overwrite=False,
