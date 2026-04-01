@@ -1,7 +1,9 @@
-local: True
+local: False
 local_paths:
   noise: "C:\\Users\\goldw\\Desktop\\projects\\local_extradrive\\SBCEX_examples"
   data: "C:\\Users\\goldw\\Desktop\\projects\\local_extradrive\\sim_data"
+  ctd: ""
 remote_paths:
   noise: "/media/mark/extradrive2/uncertain_inversion/environmental_data/noise/sbcex22_noise.h5"
-  data: "/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data"
+  data: "/media/mark/extradrive2/uncertain_inversion/single_sensor_spectrum_RI/sim_data/"
+  ctd: "/media/mark/extradrive2/uncertain_inversion/environmental_data/ctd/"
