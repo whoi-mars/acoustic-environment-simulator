@@ -120,7 +120,7 @@ classdef KLE
             
             % get random coefficients used if desired
             if coeffs
-                varargout{1} = Z .* diag(D_M);
+                varargout{1} = Z; % .* diag(D_M);
             end
         end
 
