@@ -165,7 +165,7 @@ parfor i_cb = 1:L_cb
             t_min = zeros(1,per_env_sims,'single'); % [s]
             cb_labels = zeros(1,per_env_sims,'single'); % [m/s]
             cw_labels = zeros(length(config.CW_NODE_DEPTHS)+2,per_env_sims,'single'); % [m/s]
-            z_labels = zeros(length(config.CW_NODE_DEPTHS),'single'); % [m]
+            z_labels = zeros(length(config.CW_NODE_DEPTHS),per_env_sims,'single'); % [m]
             c_sed_labels = zeros(1,per_env_sims,'single'); % [m/s]
             H_labels = zeros(1,per_env_sims,'single'); % [m]
             D_labels = zeros(1,per_env_sims,'single'); % [m]
@@ -294,7 +294,6 @@ parfor i_cb = 1:L_cb
                         continue;
                     end
                     
-
                     % calculate pressure field
                     for ff=1:Nf
                         for mm=1:config.NM
@@ -537,7 +536,7 @@ function update(data,path,L_CHUNK,N_SIGS,NM,nfft,total_sims)
             t_close(:,mod_res+1:end) = 0;
             p_f(:,1:mod_res) = p_f(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
             p_f(:, mod_res+1:end) = 0;
-            vg_m_f(:,1:mod_res) = vg_m_f(:,:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            vg_m_f(:,:,1:mod_res) = vg_m_f(:,:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
             vg_m_f(:,:,mod_res+1:end) = 0;
             labels(:,1:mod_res) = labels(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
             labels(:,mod_res+1:end) = 0;
