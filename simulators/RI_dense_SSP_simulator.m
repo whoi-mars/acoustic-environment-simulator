@@ -12,8 +12,9 @@ if cg.local
     DATA_PATH = cg.local_paths.data;
     NOISE_PATH = cg.local_paths.noise;
 else
-    DATA_PATH = cg.remote_paths.data;
+    DATA_PATH = fullfile(cg.remote_paths.data,"RI_layered_realistic_SSP");
     NOISE_PATH = cg.remote_paths.noise;
+    CTD_PATH = cg.remote_paths.ctd;
 end
 
 %------------------------
@@ -50,7 +51,7 @@ end
 %-------------------------------------
 fprintf('Loading CTD Data...')
     % load data
-    [CTD, full_depth_vec] = load_asc_CTD_data(fullfile(NOISE_PATH, "ctd_data"),config.DZ,'fill_top',true);
+    [CTD, full_depth_vec] = load_asc_CTD_data(CTD_PATH,config.DZ,'fill_top',true);
 
     % isolate sound speed and delete rest of data
     C_data = CTD(:,:,end);
@@ -150,7 +151,7 @@ if config.N > 0
 end
 
 tic
-for i_cb = 1:L_cb
+parfor i_cb = 1:L_cb
     % grab current cb value
     curr_cb = cb_vec(i_cb); % [m/s]
     for i_csed = 1:L_csed
@@ -554,7 +555,7 @@ function update(data,path,L_CHUNK,N_SIGS,NM,nfft,total_sims)
             t_close(:,mod_res+1:end) = 0;
             p_f(:,1:mod_res) = p_f(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
             p_f(:, mod_res+1:end) = 0;
-            vg_m_f(:,1:mod_res) = vg_m_f(:,:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+            vg_m_f(:,:,1:mod_res) = vg_m_f(:,:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
             vg_m_f(:,:,mod_res+1:end) = 0;
             labels(:,1:mod_res) = labels(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
             labels(:,mod_res+1:end) = 0;
