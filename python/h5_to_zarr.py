@@ -183,10 +183,10 @@ if __name__ == "__main__":
     # load paths
     if config_global["local"]:
         noise_path = config_global["local_paths"]["noise"]
-        data_path = os.path.join(config_global["local_paths"]["data"], "RI_layered")
+        data_path = os.path.join(config_global["local_paths"]["data"])
     else:
         noise_path = config_global["remote_paths"]["noise"]
-        data_path = os.path.join(config_global["remote_paths"]["data"], "RI_layered")
+        data_path = os.path.join(config_global["remote_paths"]["data"])
 
     convert_hdf5_shards_to_zarr(
         data_path=data_path,

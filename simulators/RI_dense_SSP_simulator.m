@@ -12,7 +12,7 @@ if cg.local
     DATA_PATH = cg.local_paths.data;
     NOISE_PATH = cg.local_paths.noise;
 else
-    DATA_PATH = fullfile(cg.remote_paths.data,"RI_layered_realistic_SSP");
+    DATA_PATH = cg.remote_paths.data;
     NOISE_PATH = cg.remote_paths.noise;
     CTD_PATH = cg.remote_paths.ctd;
 end

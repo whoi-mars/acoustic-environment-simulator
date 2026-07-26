@@ -29,7 +29,7 @@ config.SAVE_RESULTS = 1;
 % frequency range
 config.FREQ_RANGE = [20 300]; % [Hz]
 config.DF = 1/6; % [Hz]
-config.NM = 8; % []
+config.NM = 20; % []
 
 %---------------------------------------------
 %           Simulation Metaparameters
@@ -43,9 +43,9 @@ config.N = 12;
 % frequency used to find asymptotic group speed
 config.F_ASYM = 400; % [Hz]
 % If not 0, removed all simulated signals of shorter duration
-config.DURATION_FILTER = 0.5; % [sec]
+config.DURATION_FILTER = 0.25; % [sec]
 % noise is added to each simulated signal
-config.SNR_RANGE = [-7 3]; % [dB]
+config.SNR_RANGE = [-5 5]; % [dB]
 % randomly shift simulated signal in simulation window
 config.RANDOM_SHIFT = 1;
 
@@ -83,14 +83,14 @@ config.D_RANGE = [68 78]; % [m]
 %---------------------------------------------
 %              Source Depths
 %---------------------------------------------
-config.ZS_RANGE = [58 62]; % [m]
-config.DELTA_ZS = 1; % [m]
+config.ZS_RANGE = [55 63]; % [m]
+config.DELTA_ZS = 2; % [m]
 
 %---------------------------------------------
 %              Source Ranges
 %---------------------------------------------
-config.R_RANGE = [6000 15000]; % [m]
-config.DELTA_R = 100; % [m]
+config.R_RANGE = [4000 15000]; % [m]
+config.DELTA_R = 50; % [m]
 
 %------------------------------------------------------------------------
 %========================================================================
