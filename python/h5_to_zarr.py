@@ -7,6 +7,51 @@ import yaml
 
 from utils.split import train_test_split_inds
 
+
+def get_dimension_names(name, shape):
+    """
+    Return xarray-compatible dimension names for a Zarr array.
+    """
+    # number of dimensions
+    ndim = len(shape)
+
+    # determine dimension names based on dataset name and shape
+    if name in {"p_f_re", "p_f_im"}:
+        return ("sample",) + tuple(f"pressure_dim_{i}" for i in range(1, ndim))
+    if name == "labels":
+        return ("sample",) + tuple(f"label_dim_{i}" for i in range(1, ndim))
+    if name == "fs" and ndim == 1:
+        return ("frequency",)
+    if name == "depth_vec" and ndim == 1:
+        return ("depth",)
+    if name == "mu" and ndim == 1:
+        return ("latent",)
+    if name == "V" and ndim == 2:
+        return ("depth", "latent")
+    if name in {"D", "sigma"} and ndim == 1:
+        return ("latent",)
+
+    return tuple(f"{name}_dim_{i}" for i in range(ndim))
+
+
+def infer_sample_axes(h5_file, keys):
+    """
+    Return axis 0 as the sample axis for every dataset.
+    """
+    sample_count = h5_file[keys[0]].shape[0]
+    sample_axes = {}
+    for key in keys:
+        shape = h5_file[key].shape
+        if not shape or shape[0] != sample_count:
+            raise ValueError(
+                f"Expected {key} to have {sample_count} samples on axis 0, "
+                f"for {key}, whose shape is {shape}."
+            )
+        sample_axes[key] = 0
+
+    return sample_count, sample_axes
+
+
 def convert_hdf5_shards_to_zarr(
     data_path,
     keys=("p_f_re", "p_f_im", "labels"),
@@ -19,7 +64,8 @@ def convert_hdf5_shards_to_zarr(
 
     Assumptions:
       - Each shard contains datasets named in `keys`
-      - Datasets have shape (n_i, ...) where axis 0 is sample index
+      - HDF5 datasets have samples on axis 0; output Zarr arrays are also
+        sample-first
       - All shards share identical trailing dimensions and dtypes per key
     """
 
@@ -27,10 +73,13 @@ def convert_hdf5_shards_to_zarr(
     h5_glob_pattern = os.path.join(data_path, "*.h5")
     out_zarr_path = os.path.join(data_path, "out_dataset.zarr")
     out_stats_path = os.path.join(data_path, "split_indices.npz")
-    
+
+    # get MATLAB-generated h5 files
     h5_files = sorted(glob.glob(h5_glob_pattern))
     if not h5_files:
         raise FileNotFoundError(f"No HDF5 files matched: {h5_glob_pattern}")
+
+    # filter out KLE.h5 if it exists
     h5_files = [
         file_path for file_path in h5_files 
         if os.path.basename(file_path) != "KLE.h5"
@@ -45,6 +94,7 @@ def convert_hdf5_shards_to_zarr(
     total_n = 0
     ref_info = {}  # key -> (dtype, tail_shape)
     shard_ns = []
+    shard_sample_axes = []
 
     # --- Save fs (once) ---
     with h5py.File(h5_files[0], "r") as f0:
@@ -60,13 +110,15 @@ def convert_hdf5_shards_to_zarr(
 
     for fp in h5_files:
         with h5py.File(fp, "r") as f:
-            n = f[keys[0]].shape[0]
+            n, sample_axes = infer_sample_axes(f, keys)
             shard_ns.append(n)
+            shard_sample_axes.append(sample_axes)
             total_n += n
 
             for k in keys:
                 dset = f[k]
-                tail_shape = dset.shape[1:]
+                sample_axis = sample_axes[k]
+                tail_shape = dset.shape[:sample_axis] + dset.shape[sample_axis + 1:]
                 dtype = dset.dtype
                 if k not in ref_info:
                     ref_info[k] = (dtype, tail_shape)
@@ -78,7 +130,7 @@ def convert_hdf5_shards_to_zarr(
                         raise ValueError(f"Dtype mismatch for {k} in {fp}: {dtype} != {ref_dtype}")
 
     # --- Create Zarr group at the given path ---
-    root = zarr.open_group(out_zarr_path, mode="a")
+    root = zarr.open_group(out_zarr_path, mode="a", zarr_format=3)
 
     # Guard against accidentally clobbering arrays when overwrite=False
     for k in keys:
@@ -92,58 +144,41 @@ def convert_hdf5_shards_to_zarr(
     zarr_arrays = {}
 
     # Create fs array in Zarr (1D, small)
-    zarr_arrays["fs"] = root.create_dataset(
-                            name="fs",
-                            data=fs,
-                            shape=fs.shape,
-                            dtype=fs.dtype,
-                        )
+    zarr_arrays["fs"] = root.create_array(
+        name="fs",
+        data=fs,
+        dimension_names=get_dimension_names("fs", fs.shape),
+    )
     
     if os.path.exists(os.path.join(data_path, "KLE.h5")):
-        zarr_arrays["mu"] = root.create_dataset(
-                                name="mu",
-                                data=mu,
-                                shape=mu.shape,
-                                dtype=mu.dtype,
-                            )
-        zarr_arrays["V"] = root.create_dataset(
-                                name="V",
-                                data=V,
-                                shape=V.shape,
-                                dtype=V.dtype,
-                            ) 
-        zarr_arrays["D"] = root.create_dataset(
-                                name="D",
-                                data=D,
-                                shape=D.shape,
-                                dtype=D.dtype,
-                            ) 
-        zarr_arrays["sigma"] = root.create_dataset(
-                                name="sigma",
-                                data=sigma,
-                                shape=sigma.shape,
-                                dtype=sigma.dtype,
-                            )
-        zarr_arrays["depth_vec"] = root.create_dataset(
-                                name="depth_vec",
-                                data=depth_vec,
-                                shape=depth_vec.shape,
-                                dtype=depth_vec.dtype,
-                            )            
+        for name, values in {
+            "mu": mu,
+            "V": V,
+            "D": D,
+            "sigma": sigma,
+            "depth_vec": depth_vec,
+        }.items():
+            zarr_arrays[name] = root.create_array(
+                name=name,
+                data=values,
+                dimension_names=get_dimension_names(name, values.shape),
+            )
 
     for k in keys:
         dtype, tail_shape = ref_info[k]
         chunks = (chunk_samples,) + tail_shape  # chunk along samples
-        zarr_arrays[k] = root.create_dataset(
+        array_shape = (total_n,) + tail_shape
+        zarr_arrays[k] = root.create_array(
             name=k,
-            shape=(total_n,) + tail_shape,
+            shape=array_shape,
             chunks=chunks,
             dtype=dtype,
+            dimension_names=get_dimension_names(k, array_shape),
         )
 
     # --- Second pass: copy data shard by shard, chunked along sample axis ---
     write_cursor = 0
-    for fp, n_shard in zip(h5_files, shard_ns):
+    for fp, n_shard, sample_axes in zip(h5_files, shard_ns, shard_sample_axes):
         with h5py.File(fp, "r") as f:
             for start in range(0, n_shard, chunk_samples):
                 end = min(start + chunk_samples, n_shard)
@@ -151,7 +186,11 @@ def convert_hdf5_shards_to_zarr(
                 out_end = write_cursor + end
 
                 for k in keys:
-                    block = f[k][start:end]  # small NumPy block
+                    sample_axis = sample_axes[k]
+                    source_slices = [slice(None)] * f[k].ndim
+                    source_slices[sample_axis] = slice(start, end)
+                    block = f[k][tuple(source_slices)]
+                    block = np.moveaxis(block, sample_axis, 0)
                     zarr_arrays[k][out_start:out_end] = block
 
         write_cursor += n_shard
