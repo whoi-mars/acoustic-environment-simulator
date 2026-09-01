@@ -242,7 +242,7 @@ parfor i_cb = 1:L_cb
             % instantiate for parallel processing
             data = [];
             % index of receiver in depth vector
-            zr_idx = find(zm == zr); % []
+            zr_idx = find_in_vec(zm,zr,'thresh',find_tolerance); % find(zm == zr); % []
             % store signals
             p_m_f = zeros(nfft,config.NM,per_env_sims);
             vg_m_f = zeros(nfft,config.NM,per_env_sims);
@@ -257,7 +257,7 @@ parfor i_cb = 1:L_cb
                     % get current source depth and index in depth
                     % vector
                     curr_zs = zs_vec(i_zs); % [m]
-                    curr_zs_idx = find(zm == zs_vec(i_zs)); % []
+                    curr_zs_idx = find_in_vec(zm,zs_vec(i_zs),'thresh',find_tolerance); % find(zm == zs_vec(i_zs)); % []
 
                     % check that source depth is in the water column
                     assert(D > curr_zs, "source depth not in the water column.");
