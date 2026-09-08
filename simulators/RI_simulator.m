@@ -38,7 +38,7 @@ T = 1/config.DF; % [s]
 rho_w = 1.0; % [g/cm^3]
 freq_krak = config.FREQ_RANGE(1):config.DF:config.FREQ_RANGE(2); % [Hz]
 Nf = length(freq_krak); % []
-find_tolerance = 1e-6; % []
+find_tolerance = 1e-4; % []
 
 %-------------------------------------
 %             Load Noise

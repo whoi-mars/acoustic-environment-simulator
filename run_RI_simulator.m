@@ -57,7 +57,7 @@ config.CW_NODE_DEPTHS = [20 40]; % [m]
 %---------------------------------------------
 %     Sediment Sound Speed + Attenuation
 %---------------------------------------------
-config.CSED_RANGE = [1400 1500]; % [m/s]
+config.CSED_RANGE = [1500 1600]; % [m/s]
 config.DELTA_CSED = 15; % [m/s]
 config.SED_ALPHA_RANGE = [0.05 0.05]; % [dB/wavelength]
 
