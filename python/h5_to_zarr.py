@@ -22,6 +22,8 @@ def get_dimension_names(name, shape):
         return ("sample",) + tuple(f"label_dim_{i}" for i in range(1, ndim))
     if name == "fs" and ndim == 1:
         return ("frequency",)
+    if name == "df" and ndim == 1:
+        return ("dfrequency",)
     if name == "depth_vec" and ndim == 1:
         return ("depth",)
     if name == "mu" and ndim == 1:
@@ -96,9 +98,10 @@ def convert_hdf5_shards_to_zarr(
     shard_ns = []
     shard_sample_axes = []
 
-    # --- Save fs (once) ---
+    # --- Save fs and df (once) ---
     with h5py.File(h5_files[0], "r") as f0:
         fs = np.asarray(f0["fs"][...])
+        df = np.asarray(f0["df"][...])
 
     if os.path.exists(os.path.join(data_path, "KLE.h5")):
         with h5py.File(os.path.join(data_path, "KLE.h5"), "r") as f:
@@ -148,6 +151,13 @@ def convert_hdf5_shards_to_zarr(
         name="fs",
         data=fs,
         dimension_names=get_dimension_names("fs", fs.shape),
+    )
+
+    # Create df array in Zarr (1D, small)
+    zarr_arrays["df"] = root.create_array(
+        name="df",
+        data=df,
+        dimension_names=get_dimension_names("df", df.shape),
     )
     
     if os.path.exists(os.path.join(data_path, "KLE.h5")):
@@ -222,7 +232,7 @@ if __name__ == "__main__":
     # load paths
     if config_global["local"]:
         noise_path = config_global["local_paths"]["noise"]
-        data_path = os.path.join(config_global["local_paths"]["data"])
+        data_path = os.path.join(config_global["local_paths"]["data"], "target")
     else:
         noise_path = config_global["remote_paths"]["noise"]
         data_path = os.path.join(config_global["remote_paths"]["data"])
