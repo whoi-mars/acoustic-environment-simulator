@@ -38,7 +38,7 @@ config.ADD_NOISE = 10000;
 % number of environments to save per file
 config.ENV_CHUNK = 16;
 % number of processe in parallel pool
-config.N = 2;
+config.N = 12;
 % frequency used to find asymptotic group speed
 config.F_ASYM = 400; % [Hz]
 % If not 0, removed all simulated signals of shorter duration
@@ -57,7 +57,7 @@ config.CW_NODE_DEPTHS = [20 40]; % [m]
 %---------------------------------------------
 %     Sediment Sound Speed + Attenuation
 %---------------------------------------------
-config.CSED_RANGE = [1400 1500]; % [m/s]
+config.CSED_RANGE = [1500 1600]; % [m/s]
 config.DELTA_CSED = 15; % [m/s]
 config.SED_ALPHA_RANGE = [0.05 0.05]; % [dB/wavelength]
 
