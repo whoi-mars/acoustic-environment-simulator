@@ -44,40 +44,43 @@ config.F_ASYM = 400; % [Hz]
 % If not 0, removed all simulated signals of shorter duration
 config.DURATION_FILTER = 0.25; % [sec]
 % noise is added to each simulated signal
-config.SNR_RANGE = [-5 5]; % [dB]
+config.SNR_RANGE = [5 6]; % [dB]
 % randomly shift simulated signal in simulation window
 config.RANDOM_SHIFT = 1;
 
 %---------------------------------------------
 %          Water Column Sound Speed
 %---------------------------------------------
-config.CW_RANGE = [1478, 1498]; % [m/s]
+config.CW_RANGE = [1488, 1498;
+                   1488, 1498;
+                   1488, 1498;
+                   1488, 1498]; % [m/s]
 config.CW_NODE_DEPTHS = [20 40]; % [m]
 
 %---------------------------------------------
 %     Sediment Sound Speed + Attenuation
 %---------------------------------------------
-config.CSED_RANGE = [1500 1600]; % [m/s]
-config.DELTA_CSED = 15; % [m/s]
+config.CSED_RANGE = [1480 1500]; % [m/s]
+config.DELTA_CSED = 2; % [m/s]
 config.SED_ALPHA_RANGE = [0.05 0.05]; % [dB/wavelength]
 
 %---------------------------------------------
 %             Sediment Thickness
 %---------------------------------------------
-config.H_RANGE = [10 15]; % [m]
+config.H_RANGE = [8 10]; % [m]
 config.DELTA_H = 1; % [m]
 
 %---------------------------------------------
 %      Basement Sound Speed + Attenuation
 %---------------------------------------------
-config.CB_RANGE = [1600 2200]; % [m/s]
-config.DELTA_CB = 40; % [m/s]
+config.CB_RANGE = [1750 1770]; % [m/s]
+config.DELTA_CB = 2; % [m/s]
 config.B_ALPHA_RANGE = [0.25 0.25]; % [db/wavelength]
 
 %---------------------------------------------
 %            Water Column Depth
 %---------------------------------------------
-config.D_RANGE = [68 78]; % [m]
+config.D_RANGE = [68 68]; % [m]
 
 %---------------------------------------------
 %              Source Depths

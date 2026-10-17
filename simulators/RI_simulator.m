@@ -146,7 +146,10 @@ parfor i_cb = 1:L_cb
             % for a particular environement
             D = randi(config.D_RANGE); % [m]
             zr = D - 1; % [m]
-            cw_vec = unifrnd(config.CW_RANGE(1), config.CW_RANGE(2), 1, length(config.CW_NODE_DEPTHS)+2); % [m/s]
+            cw_vec = zeros(1, length(config.CW_NODE_DEPTHS)+2); % [m/s]
+            for i_node = 1:size(config.CW_RANGE,1)
+                cw_vec(i_node) = unifrnd(config.CW_RANGE(i_node,1), config.CW_RANGE(i_node,2)); % [m/s]
+            end
             rho_sed = hamilton(curr_csed); % [g/cm^3]
             rho_b = hamilton(curr_cb); % [g/cm^3]
             b_alpha = unifrnd(config.B_ALPHA_RANGE(1), config.B_ALPHA_RANGE(2)); % [dB/wavelength]
