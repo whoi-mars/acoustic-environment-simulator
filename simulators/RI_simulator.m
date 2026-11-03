@@ -174,6 +174,7 @@ parfor i_cb = 1:L_cb
             D_labels = zeros(1,per_env_sims,'single'); % [m]
             r_labels = zeros(1,per_env_sims,'single'); % [m]
             zs_labels = zeros(1,per_env_sims,'single'); % [m]
+            env_idx_labels = zeros(1,per_env_sims,'single'); % []
 
             % storage for KRAKEN output
             vg_krak = zeros(Nf,config.NM); % [m/s]
@@ -242,6 +243,8 @@ parfor i_cb = 1:L_cb
             %------------------------------------------------
             % keep track of call
             call_num = 1;
+            % Unique index for each environment (same for all r/zs simulations)
+            env_idx = sub2ind([L_H, L_csed, L_cb], i_H, i_csed, i_cb);
             % instantiate for parallel processing
             data = [];
             % index of receiver in depth vector
@@ -277,6 +280,7 @@ parfor i_cb = 1:L_cb
                     D_labels(call_num) = D;
                     r_labels(call_num) = curr_r;
                     zs_labels(call_num) = curr_zs;
+                    env_idx_labels(call_num) = env_idx;
 
                     % store signal start/end times
                     vg_krak_curr = vg_krak;
@@ -330,7 +334,8 @@ parfor i_cb = 1:L_cb
                       H_labels
                       D_labels
                       r_labels
-                      zs_labels];
+                      zs_labels
+                      env_idx_labels];
 
             % trim storage vectors to simulated calls
             p_f = p_f(:,1:call_num-1);
@@ -389,7 +394,8 @@ parfor i_cb = 1:L_cb
                               + size(H_labels,1)...
                               + size(D_labels,1)...
                               + size(r_labels,1)...
-                              + size(zs_labels,1);
+                              + size(zs_labels,1)...
+                              + size(env_idx_labels,1);
             if config.ADD_NOISE
                 data.num_labels = data.num_labels + 1;
             end 
