@@ -60,6 +60,7 @@ def convert_hdf5_shards_to_zarr(
     chunk_samples=32,
     overwrite=False,
     tts=(0.8, 0.1, 0.1),
+    env_tts=False,
 ):
     """
     Convert multiple HDF5 shard files into a single Zarr store, streaming along axis 0.
@@ -212,17 +213,39 @@ def convert_hdf5_shards_to_zarr(
     #                GENERATE TRAIN/VAL/TEST SPLIT INDICES                   #
     ##########################################################################
 
-    # get split percentages
-    train_split, val_split, test_split = tts[0], tts[1], tts[2]
+    if not env_tts:
+        # get split percentages
+        train_split, val_split, test_split = tts[0], tts[1], tts[2]
 
-    # get split indices
-    train_inds, val_inds, test_inds = train_test_split_inds(np.arange(total_n), train_size=train_split, test_size=test_split, val_size=val_split)
+        # get split indices
+        train_inds, val_inds, test_inds = train_test_split_inds(np.arange(total_n), train_size=train_split, test_size=test_split, val_size=val_split)
 
-    # save indices
-    np.savez(out_stats_path,
-            train_inds=train_inds,
-            val_inds=val_inds,
-            test_inds=test_inds)
+        # save indices
+        np.savez(out_stats_path,
+                train_inds=train_inds,
+                val_inds=val_inds,
+                test_inds=test_inds)
+    else:
+        # open zarr file and get environment indices labels and unique values
+        root = zarr.open(os.path.join(data_path, "out_dataset.zarr"), mode="r")
+        env_idxs = root["labels"][:, -2]
+        unique_env_idxs = np.unique(env_idxs)
+
+        # get split percentages
+        train_split, val_split, test_split = tts[0], tts[1], tts[2]
+
+        # get split indices
+        train_inds, val_inds, test_inds = train_test_split_inds(np.arange(len(unique_env_idxs)), train_size=train_split, test_size=test_split, val_size=val_split)
+
+        # build dictionary of 
+        env_idxs_train = {int(env_idx - 1): np.flatnonzero(env_idxs == env_idx) for env_idx in train_inds}
+        env_idxs_val = {int(env_idx - 1): np.flatnonzero(env_idxs == env_idx) for env_idx in val_inds}
+        env_idxs_test = {int(env_idx - 1): np.flatnonzero(env_idxs == env_idx) for env_idx in test_inds}
+
+        np.savez(out_stats_path,
+                 train_inds=env_idxs_train,
+                 val_inds=env_idxs_val,
+                 test_inds=env_idxs_test)
 
 if __name__ == "__main__":
     # load global config file
@@ -243,4 +266,5 @@ if __name__ == "__main__":
         chunk_samples=32,
         overwrite=False,
         tts=[0.8, 0.1, 0.1],
+        env_tts=True,
     )
