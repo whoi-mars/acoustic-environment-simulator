@@ -76,6 +76,7 @@ def convert_hdf5_shards_to_zarr(
     h5_glob_pattern = os.path.join(data_path, "*.h5")
     out_zarr_path = os.path.join(data_path, "out_dataset.zarr")
     out_stats_path = os.path.join(data_path, "split_indices.npz")
+    out_env_stats_path = os.path.join(data_path, "split_indices_env.npz")
 
     # get MATLAB-generated h5 files
     h5_files = sorted(glob.glob(h5_glob_pattern))
@@ -213,7 +214,53 @@ def convert_hdf5_shards_to_zarr(
     #                GENERATE TRAIN/VAL/TEST SPLIT INDICES                   #
     ##########################################################################
 
-    if not env_tts:
+    if env_tts:
+        # open zarr file and get environment indices labels and unique values
+        root = zarr.open(os.path.join(data_path, "out_dataset.zarr"), mode="r")
+        env_idxs = root["labels"][:, -2] - 1
+        unique_env_idxs = np.unique(env_idxs)
+
+        # get split percentages
+        train_split, val_split, test_split = tts[0], tts[1], tts[2]
+
+        # get split indices
+        train_env_inds, val_env_inds, test_env_inds = train_test_split_inds(np.arange(len(unique_env_idxs)), train_size=train_split, test_size=test_split, val_size=val_split)
+
+        # build dictionary of 
+        env_idxs_train = {int(env_idx): np.flatnonzero(env_idxs == env_idx) for env_idx in train_env_inds}
+        env_idxs_val = {int(env_idx): np.flatnonzero(env_idxs == env_idx) for env_idx in val_env_inds}
+        env_idxs_test = {int(env_idx): np.flatnonzero(env_idxs == env_idx) for env_idx in test_env_inds}
+
+        # build equivalent indices lists
+        train_inds = []
+        for train_vals in env_idxs_train.values():
+            train_inds.extend(train_vals)
+        train_inds = np.asarray(train_inds)
+
+        # build equivalent indices lists
+        val_inds = []
+        for val_vals in env_idxs_val.values():
+            val_inds.extend(val_vals)
+        val_inds = np.asarray(val_inds)
+
+        # build equivalent indices lists
+        test_inds = []
+        for test_vals in env_idxs_test.values():
+            test_inds.extend(test_vals)
+        test_inds = np.asarray(test_inds)
+
+        np.savez(out_env_stats_path,
+                 train_inds=env_idxs_train,
+                 val_inds=env_idxs_val,
+                 test_inds=env_idxs_test)
+
+        # save equivalent indices
+        np.savez(out_stats_path,
+                 train_inds=train_inds,
+                 val_inds=val_inds,
+                 test_inds=test_inds)
+        
+    else:
         # get split percentages
         train_split, val_split, test_split = tts[0], tts[1], tts[2]
 
@@ -225,27 +272,7 @@ def convert_hdf5_shards_to_zarr(
                 train_inds=train_inds,
                 val_inds=val_inds,
                 test_inds=test_inds)
-    else:
-        # open zarr file and get environment indices labels and unique values
-        root = zarr.open(os.path.join(data_path, "out_dataset.zarr"), mode="r")
-        env_idxs = root["labels"][:, -2]
-        unique_env_idxs = np.unique(env_idxs)
 
-        # get split percentages
-        train_split, val_split, test_split = tts[0], tts[1], tts[2]
-
-        # get split indices
-        train_inds, val_inds, test_inds = train_test_split_inds(np.arange(len(unique_env_idxs)), train_size=train_split, test_size=test_split, val_size=val_split)
-
-        # build dictionary of 
-        env_idxs_train = {int(env_idx - 1): np.flatnonzero(env_idxs == env_idx) for env_idx in train_inds}
-        env_idxs_val = {int(env_idx - 1): np.flatnonzero(env_idxs == env_idx) for env_idx in val_inds}
-        env_idxs_test = {int(env_idx - 1): np.flatnonzero(env_idxs == env_idx) for env_idx in test_inds}
-
-        np.savez(out_stats_path,
-                 train_inds=env_idxs_train,
-                 val_inds=env_idxs_val,
-                 test_inds=env_idxs_test)
 
 if __name__ == "__main__":
     # load global config file
