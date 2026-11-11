@@ -224,7 +224,7 @@ def convert_hdf5_shards_to_zarr(
         train_split, val_split, test_split = tts[0], tts[1], tts[2]
 
         # get split indices
-        train_env_inds, val_env_inds, test_env_inds = train_test_split_inds(np.arange(len(unique_env_idxs)), train_size=train_split, test_size=test_split, val_size=val_split)
+        train_env_inds, val_env_inds, test_env_inds = train_test_split_inds(unique_env_idxs, train_size=train_split, test_size=test_split, val_size=val_split)
 
         # build dictionary of 
         env_idxs_train = {int(env_idx): np.flatnonzero(env_idxs == env_idx) for env_idx in train_env_inds}
