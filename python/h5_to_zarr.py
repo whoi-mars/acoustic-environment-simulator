@@ -206,9 +206,9 @@ def convert_hdf5_shards_to_zarr(
                     zarr_arrays[k][out_start:out_end] = block
 
         write_cursor += n_shard
-        print(f"Copied {fp} ({n_shard} samples). Total written: {write_cursor}/{total_n}")
+        print(f"Copied {fp} ({n_shard} samples). Total written: {write_cursor}/{total_n}", flush=True)
 
-    print(f"Done. Zarr written to: {out_zarr_path}")
+    print(f"Done. Zarr written to: {out_zarr_path}", flush=True)
 
     ##########################################################################
     #                GENERATE TRAIN/VAL/TEST SPLIT INDICES                   #
@@ -289,7 +289,7 @@ if __name__ == "__main__":
 
     convert_hdf5_shards_to_zarr(
         data_path=data_path,
-        keys=("p_f_re", "p_f_im", "labels"),
+        keys=("p_f_re", "p_f_im", "p_f_clean_re", "p_f_clean_im", "labels"),
         chunk_samples=32,
         overwrite=False,
         tts=[0.8, 0.1, 0.1],
