@@ -21,6 +21,7 @@ rng(1234)
 %---------------------------------------------
 % save simulation results
 config.SAVE_RESULTS = 1;
+config.SAVE_CLEAN = 1;
 
 %---------------------------------------------
 %            Constant Parameters
@@ -44,54 +45,54 @@ config.F_ASYM = 400; % [Hz]
 % If not 0, removed all simulated signals of shorter duration
 config.DURATION_FILTER = 0.25; % [sec]
 % noise is added to each simulated signal
-config.SNR_RANGE = [-5 5]; % [dB]
+config.SNR_RANGE = [3 5]; % [dB]
 % randomly shift simulated signal in simulation window
 config.RANDOM_SHIFT = 1;
 
 %---------------------------------------------
 %          Water Column Sound Speed
 %---------------------------------------------
-config.CW_RANGE = [1478, 1498;
-                   1448, 1498;
-                   1468, 1498;
-                   1478, 1498]; % [m/s]
+config.CW_RANGE = [1478, 1500;
+                   1468, 1500;
+                   1458, 1500;
+                   1478, 1500]; % [m/s]
 config.CW_NODE_DEPTHS = [20 40]; % [m]
 
 %---------------------------------------------
 %     Sediment Sound Speed + Attenuation
 %---------------------------------------------
-config.CSED_RANGE = [1405 1545]; % [m/s]
-config.DELTA_CSED = 10; % [m/s]
+config.CSED_RANGE = [1400 1600]; % [m/s]
+config.DELTA_CSED = 20; % [m/s]
 config.SED_ALPHA_RANGE = [0.05 0.05]; % [dB/wavelength]
 
 %---------------------------------------------
 %             Sediment Thickness
 %---------------------------------------------
-config.H_RANGE = [6 10]; % [m]
+config.H_RANGE = [5 15]; % [m]
 config.DELTA_H = 1; % [m]
 
 %---------------------------------------------
 %      Basement Sound Speed + Attenuation
 %---------------------------------------------
-config.CB_RANGE = [1730 1870]; % [m/s]
-config.DELTA_CB = 10; % [m/s]
+config.CB_RANGE = [1700 2000]; % [m/s]
+config.DELTA_CB = 20; % [m/s]
 config.B_ALPHA_RANGE = [0.25 0.25]; % [db/wavelength]
 
 %---------------------------------------------
 %            Water Column Depth
 %---------------------------------------------
-config.D_RANGE = [68 78]; % [m]
+config.D_RANGE = [70 77]; % [m]
 
 %---------------------------------------------
 %              Source Depths
 %---------------------------------------------
-config.ZS_RANGE = [50 55]; % [m]
+config.ZS_RANGE = [55 55]; % [m]
 config.DELTA_ZS = 1; % [m]
 
 %---------------------------------------------
 %              Source Ranges
 %---------------------------------------------
-config.R_RANGE = [4500 14500]; % [m]
+config.R_RANGE = [4000 15000]; % [m]
 config.DELTA_R = 100; % [m]
 
 %------------------------------------------------------------------------
