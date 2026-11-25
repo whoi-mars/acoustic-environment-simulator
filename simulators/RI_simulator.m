@@ -320,6 +320,7 @@ parfor i_cb = 1:L_cb
 
             % no successful calls
             if call_num == 1
+                sprintf("No successful signals from env %d", env_idx);
                 continue;
             end
 
@@ -362,6 +363,10 @@ parfor i_cb = 1:L_cb
                 noise_data(1:min_ind_f-1,:) = 0;
                 noise_data(max_ind_f+1:end,:) = 0;
 
+                if config.SAVE_CLEAN
+                    p_f_clean = p_f;
+                end
+
                 % add noise
                 [p_f, snr] = add_noise(p_f, noise_data, config.SNR_RANGE);
 
@@ -373,7 +378,11 @@ parfor i_cb = 1:L_cb
             if config.RANDOM_SHIFT
                 durations = t_max - t_min;
                 for i = 1:size(p_f,2)
-                    p_f(:,i) = p_f(:,i).*exp(2*1i*pi*freq_sig.*randi(ceil(T*fs - durations(i)*fs))).';
+                    shift = randi(ceil(T*fs - durations(i)*fs));
+                    p_f(:,i) = p_f(:,i).*exp(2*1i*pi*freq_sig.*shift).';
+                    if config.SAVE_CLEAN
+                        p_f_clean(:,i) = p_f_clean(:,i).*exp(2*1i*pi*freq_sig.*shift).';
+                    end
                 end
             end
 
@@ -381,6 +390,9 @@ parfor i_cb = 1:L_cb
             data.t_far = t_max;
             data.t_close = t_min;
             data.p_f = p_f;
+            if config.SAVE_CLEAN
+                data.p_f_clean = p_f_clean;
+            end
             data.vg_m_f = vg_m_f;
             data.labels = labels;
             data.fs = fs;
@@ -464,6 +476,14 @@ function update(data,path,L_CHUNK,N_SIGS,NM,nfft,total_sims)
 
     % persistent variables to save
     persistent p_f vg_m_f labels t_close t_far df fs;
+    
+    persistent save_clean
+    save_clean = false;
+
+    if isfield(data, 'p_f_clean')
+        persistent p_f_clean;
+        save_clean = true;
+    end
 
     % persistent counter to know when to save a file
     persistent counter;
@@ -474,6 +494,9 @@ function update(data,path,L_CHUNK,N_SIGS,NM,nfft,total_sims)
         t_far = zeros(1,(L_CHUNK+1)*N_SIGS,'single');
         t_close = zeros(1,(L_CHUNK+1)*N_SIGS,'single');
         p_f = zeros(nfft,(L_CHUNK+1)*N_SIGS,'single');
+        if save_clean
+            p_f_clean = zeros(nfft,(L_CHUNK+1)*N_SIGS,'single');
+        end
         vg_m_f = zeros(nfft,NM,(L_CHUNK+1)*N_SIGS,'single');
         labels = zeros(data.num_labels,(L_CHUNK+1)*N_SIGS,'single');
         fs = data.fs;
@@ -486,6 +509,9 @@ function update(data,path,L_CHUNK,N_SIGS,NM,nfft,total_sims)
     t_far(:,counter:counter+data.chunk_size-1) = data.t_far;
     t_close(:,counter:counter+data.chunk_size-1) = data.t_close;
     p_f(:,counter:counter+data.chunk_size-1) = data.p_f;
+    if save_clean
+        p_f_clean(:,counter:counter+data.chunk_size-1) = data.p_f_clean;
+    end
     vg_m_f(:,:,counter:counter+data.chunk_size-1) = data.vg_m_f;
     labels(:,counter:counter+data.chunk_size-1) = data.labels;
 
@@ -497,31 +523,50 @@ function update(data,path,L_CHUNK,N_SIGS,NM,nfft,total_sims)
 
         if counter >= L_CHUNK*N_SIGS + 2
             % save full file
-            parsave_RI(path,p_f(:,1:L_CHUNK*N_SIGS),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df)
+            if save_clean
+                parsave_with_clean_RI(path,p_f(:,1:L_CHUNK*N_SIGS),p_f_clean(:,1:L_CHUNK*N_SIGS),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df)
+            else
+                parsave_RI(path,p_f(:,1:L_CHUNK*N_SIGS),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df)
+            end
             
             % pause so timestamps are unique
             pause(10);
 
             % save remainder
-            parsave_RI(path,p_f(:,L_CHUNK*N_SIGS+1:counter-1),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,L_CHUNK*N_SIGS+1:counter-1),t_close(:,L_CHUNK*N_SIGS+1:counter-1),labels(:,L_CHUNK*N_SIGS+1:counter-1),fs,df)
+            if save_clean
+                parsave_with_clean_RI(path,p_f(:,L_CHUNK*N_SIGS+1:counter-1),p_f_clean(:,L_CHUNK*N_SIGS+1:counter-1),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,L_CHUNK*N_SIGS+1:counter-1),t_close(:,L_CHUNK*N_SIGS+1:counter-1),labels(:,L_CHUNK*N_SIGS+1:counter-1),fs,df)
+            else
+                parsave_RI(path,p_f(:,L_CHUNK*N_SIGS+1:counter-1),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,L_CHUNK*N_SIGS+1:counter-1),t_close(:,L_CHUNK*N_SIGS+1:counter-1),labels(:,L_CHUNK*N_SIGS+1:counter-1),fs,df)
+            end
         else
             % clear out remaining empty elements. there will always be extra
             % because of the extra memory initialized
             t_far(:,counter:end) = [];
             t_close(:,counter:end) = [];
             p_f(:,counter:end) = [];
+            if save_clean
+                p_f_clean(:,counter:end) = [];
+            end
             vg_m_f(:,:,counter:end) = [];
             labels(:,counter:end) = [];
     
             % save calls
-            parsave_RI(path,p_f,vg_m_f,t_far,t_close,labels,fs,df)
+            if save_clean
+                parsave_with_clean_RI(path,p_f,p_f_clean,vg_m_f,t_far,t_close,labels,fs,df)
+            else
+                parsave_RI(path,p_f,vg_m_f,t_far,t_close,labels,fs,df)
+            end
         end
         return;
     elseif counter >= L_CHUNK*N_SIGS + 1
         % if we've filled the persistent variables, we save now
 
         % save calls
-        parsave_RI(path,p_f(:,1:L_CHUNK*N_SIGS),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df)
+        if save_clean
+            parsave_with_clean_RI(path,p_f(:,1:L_CHUNK*N_SIGS),p_f_clean(:,1:L_CHUNK*N_SIGS),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df)
+        else
+            parsave_RI(path,p_f(:,1:L_CHUNK*N_SIGS),vg_m_f(:,:,1:L_CHUNK*N_SIGS),t_far(:,1:L_CHUNK*N_SIGS),t_close(:,1:L_CHUNK*N_SIGS),labels(:,1:L_CHUNK*N_SIGS),fs,df)
+        end
             
         % reset persistent variables, carrying over extra signals that did
         % not fit in the save chunk if they exist
@@ -533,6 +578,9 @@ function update(data,path,L_CHUNK,N_SIGS,NM,nfft,total_sims)
             t_far(:) = 0;
             t_close(:) = 0;
             p_f(:) = 0;
+            if save_clean
+                p_f_clean(:) = 0;
+            end
             vg_m_f(:) = 0;
             labels(:) = 0;
 
@@ -545,6 +593,10 @@ function update(data,path,L_CHUNK,N_SIGS,NM,nfft,total_sims)
             t_close(:,mod_res+1:end) = 0;
             p_f(:,1:mod_res) = p_f(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
             p_f(:, mod_res+1:end) = 0;
+            if save_clean
+                p_f_clean(:,1:mod_res) = p_f_clean(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
+                p_f_clean(:, mod_res+1:end) = 0;
+            end
             vg_m_f(:,:,1:mod_res) = vg_m_f(:,:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
             vg_m_f(:,:,mod_res+1:end) = 0;
             labels(:,1:mod_res) = labels(:,L_CHUNK*N_SIGS+1:L_CHUNK*N_SIGS+mod_res);
